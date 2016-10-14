@@ -1,15 +1,17 @@
 var exec = require('child_process').exec;
 var Finder = require('fs-finder');
-var pckg, fileSrc, fileMinified;
+var pckg, fileSrc, fileMinified, argsLength = process.argv.length, count = 2;
 
-// Install specified package by npm
-function init() {
-  pckg = process.argv[2];
-  downloadPackage();
+// get cmd arguments array to extract package name(s)
+function getPackageToInstall() {
+  if(count < argsLength) {
+    pckg = process.argv[count];
+    installPackage();
+  }
 }
 
 // Install specified package by npm
-function downloadPackage() {
+function installPackage() {
   var cmd = 'npm install '+pckg;
 
   function callback(error, stdout, stderr) {
@@ -52,9 +54,12 @@ function uninstallPackage() {
   function callback(error, stdout, stderr) {
     if(stdout)
       console.log('package '+pckg+' uninstalled!');
+
+    count++;
+    getPackageToInstall();
   }
   exec(cmd, callback);
 }
 
 // init
-init();
+getPackageToInstall();
