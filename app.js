@@ -16,7 +16,7 @@ function installPackage() {
 
   function callback(error, stdout, stderr) {
     if(stdout) {
-      console.log('package '+pckg+' installed!');
+      console.log('--- process starded...\npackage '+pckg+' installed.\n');
 
       fileMinified = pckg+'.min.js';
       findFile();
@@ -29,7 +29,7 @@ function installPackage() {
 function findFile() {
   var files = Finder.from('./node_modules').findFiles('<'+fileMinified+'$>', function(paths) {
     fileSrc = paths;
-    console.log("path to extract: "+fileSrc);
+    console.log("path to extract: \n     "+fileSrc+'\n');
     extractFile();
   });
 }
@@ -40,7 +40,7 @@ function extractFile() {
 
   function callback(error, stdout, stderr) {
     if(stdout){
-      console.log(fileMinified+' file extracted to .\\src');
+      console.log('file extracted to source directory.\n     '+fileMinified+' -> .\\src\\\n');
       uninstallPackage();
     }
   }
@@ -53,7 +53,7 @@ function uninstallPackage() {
 
   function callback(error, stdout, stderr) {
     if(stdout)
-      console.log('package '+pckg+' uninstalled!\n');
+      console.log('package '+pckg+' uninstalled.\n--- process completed!\n--------------------------------------');
 
     count++;
     getPackageToInstall();
