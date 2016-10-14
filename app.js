@@ -1,8 +1,12 @@
 var exec = require('child_process').exec;
 var Finder = require('fs-finder');
-// get package name from cmd (IMPLEMENTAR AINDA!!!!!!!!!!)
-var pckg = 'swiper';
-var fileSrc, fileMinified;
+var pckg, fileSrc, fileMinified;
+
+// Install specified package by npm
+function init() {
+  pckg = process.argv[2];
+  downloadPackage();
+}
 
 // Install specified package by npm
 function downloadPackage() {
@@ -53,4 +57,4 @@ function uninstallPackage() {
 }
 
 // init
-downloadPackage();
+init();
