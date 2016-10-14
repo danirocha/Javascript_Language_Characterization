@@ -53,7 +53,7 @@ function uninstallPackage() {
 
   function callback(error, stdout, stderr) {
     if(stdout)
-      console.log('package '+pckg+' uninstalled!');
+      console.log('package '+pckg+' uninstalled!\n');
 
     count++;
     getPackageToInstall();
