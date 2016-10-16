@@ -1,11 +1,23 @@
 var exec = require('child_process').exec;
 var Finder = require('fs-finder');
-var pckg, fileSrc, fileJS, argsLength = process.argv.length, count = 2;
+var pckg, fileSrc, fileJS, argsArray, argsLength, count = 0;
 
-// get cmd arguments array to extract package name(s)
-function getPackageToInstall() {
+// Get cmd arguments array to extract package name(s)
+function getPackagesToInstall() {
+  argsArray = process.argv.splice(2);
+
+  if(argsArray.length === 0)
+    console.log("You must specify a package to install!");
+  else
+    argsLength = argsArray.length;
+
+  getNextPackage();
+}
+
+// Check if there's a next package to install
+function getNextPackage() {
   if(count < argsLength) {
-    pckg = process.argv[count];
+    pckg = argsArray[count];
     installPackage();
   }
 }
@@ -34,7 +46,7 @@ function findFile() {
   });
 }
 
-// Moves wanted .js file to a ./src directory
+// Move wanted .js file to a ./src directory
 function extractFile() {
   var cmd = 'move '+fileSrc+' .\\src';
 
@@ -60,10 +72,10 @@ function uninstallPackage() {
       console.log('package '+pckg+' uninstalled.\n--- process completed!\n--------------------------------------');
 
     count++;
-    getPackageToInstall();
+    getNextPackage();
   }
   exec(cmd, callback);
 }
 
 // init
-getPackageToInstall();
+getPackagesToInstall();
