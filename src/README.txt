@@ -1,0 +1,1 @@
+Dest folder for .js files to be analized.

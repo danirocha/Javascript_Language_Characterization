@@ -1,6 +1,6 @@
 var exec = require('child_process').exec;
 var Finder = require('fs-finder');
-var pckg, fileSrc, fileMinified, argsLength = process.argv.length, count = 2;
+var pckg, fileSrc, fileJS, argsLength = process.argv.length, count = 2;
 
 // get cmd arguments array to extract package name(s)
 function getPackageToInstall() {
@@ -18,29 +18,29 @@ function installPackage() {
     if(stdout) {
       console.log('--- process starded...\npackage '+pckg+' installed.\n');
 
-      fileMinified = pckg+'.min.js';
+      fileJS = pckg+'.js';
       findFile();
     }
   }
   exec(cmd, callback);
 }
 
-// Find package.min.js file's path
+// Find package.js file's path
 function findFile() {
-  var files = Finder.from('./node_modules').findFiles('<'+fileMinified+'$>', function(paths) {
+  var files = Finder.from('./node_modules').findFiles('<'+fileJS+'$>', function(paths) {
     fileSrc = paths;
     console.log("path to extract: \n     "+fileSrc+'\n');
     extractFile();
   });
 }
 
-// Moves wanted .min.js file to a ./src directory
+// Moves wanted .js file to a ./src directory
 function extractFile() {
   var cmd = 'move '+fileSrc+' .\\src';
 
   function callback(error, stdout, stderr) {
     if(stdout){
-      console.log('file extracted to source directory.\n     '+fileMinified+' -> .\\src\\\n');
+      console.log('file extracted to source directory.\n     '+fileJS+' -> .\\src\\\n');
       uninstallPackage();
     }
   }

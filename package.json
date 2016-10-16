@@ -2,9 +2,13 @@
   "name": "tcc-project",
   "version": "0.0.1",
   "description": "a javascript caracterization",
-  "main": "app.js",
+  "main": "catcher.js, analyzer.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/danirocha/Javascript_Language_Characterization.git"
   },
   "author": "Daniela Rocha and Luis Felipe Sobral",
   "license": "ISC",
