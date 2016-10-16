@@ -13,7 +13,7 @@ fs.readdir(p, function (err, files) {
     files.map(function (file) {
         return path.join(p, file);
     }).filter(function (file) {
-        return fs.statSync(file).isFile();
+        return file.substr(-3) === '.js';
     }).forEach(function (file) {
         fs.readFile(file, function ( err, logData ) {
 
@@ -33,7 +33,7 @@ fs.readdir(p, function (err, files) {
                 }
             });
 
-            console.log("Número de linhas total do código " + file + ": " + linhaFinal);
+            console.log("Total lines of code of " + file.slice(4) + " file = " + linhaFinal);
         });
     });
 });
