@@ -28,7 +28,7 @@ function installPackage() {
 // Find package.js file's path
 function findFile() {
   var files = Finder.from('./node_modules').findFiles('<'+fileJS+'$>', function(paths) {
-    fileSrc = paths;
+    fileSrc = paths[0];
     console.log("path to extract: \n     "+fileSrc+'\n');
     extractFile();
   });
@@ -39,9 +39,13 @@ function extractFile() {
   var cmd = 'move '+fileSrc+' .\\src';
 
   function callback(error, stdout, stderr) {
+    console.log(stderr);
     if(stdout){
       console.log('file extracted to source directory.\n     '+fileJS+' -> .\\src\\\n');
       uninstallPackage();
+    }
+    else {
+      console.log("hein?");
     }
   }
   exec(cmd, callback);
