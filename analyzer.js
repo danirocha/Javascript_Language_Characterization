@@ -33,7 +33,7 @@ fs.readdir(p, function (err, files) {
                 }
             });
 
-            console.log("Total lines of code of " + file.slice(4) + " file = " + linhaFinal);
+            console.log("Total lines of code of " + file.substr(+4) + " file = " + linhaFinal);
         });
     });
 });
