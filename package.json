@@ -18,6 +18,7 @@
     "estraverse": "^4.2.0",
     "fs": "0.0.1-security",
     "fs-finder": "^1.8.1",
-    "path": "^0.12.7"
+    "path": "^0.12.7",
+    "angular": "^1.5.8"
   }
 }
