@@ -16,7 +16,6 @@
   ],
   "license": "ISC",
   "dependencies": {
-    "angular": "^1.5.8",
     "cheerio": "^0.22.0",
     "child_process": "^1.0.2",
     "esprima": "^3.1.0",
