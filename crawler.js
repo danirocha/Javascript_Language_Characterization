@@ -1,17 +1,23 @@
 var request = require('request');
 var cheerio = require('cheerio');
-var URL = require('url-parse');
+var Jetty = require("jetty");
+// var URL = require('url-parse');
 
-var search = "zzzzzzz";
+var jetty = new Jetty(process.stdout);
+var search = "a";
 var pageCount = 1;
 var pageToVisit = "https://www.npmjs.com/search?q=" + search + "&page=" + pageCount;
-var $, pages, packages = [];
+var $, totalResults, totalPages, packages = [];
 
 // Get all search results into individual objects
 function getAllSearchResults() {
-    if (pageCount <= pages) {
+    var percent = parseFloat((pageCount/totalPages)*100).toFixed(2);
+    jetty.moveTo([4,0]);
+    jetty.text("page "+pageCount+": "+percent+"% read");
+
+    if (pageCount <= totalPages) {
         var searchResult = $('.search-results .package-details');
-        searchResult.each(function() {
+        searchResult.each(function(index) {
             var obj = {
                 name: $(this).find(".name").text(),
                 author: $(this).find(".author").text(),
@@ -21,24 +27,25 @@ function getAllSearchResults() {
 
             packages.push(obj);
         });
-        console.log(packages);
+        // console.log(packages, packages.length);
         pageCount++;
-        requestPage(getAllSearchResults);
+        requestPage(pageToVisit, getAllSearchResults);
     } else
-        console.log("Last page. No results found");
+        console.log("\nDone! all results for '"+search+"' were captured.\n ");
 }
 
 // Get total pages number
 function getPageNums() {
-    var resNum = parseInt($('.centered.ruled').text(), 10);
-    pages = Math.ceil(resNum / 20);
-    console.log(resNum + " results found, "+pages+" page(s) to scave!");
+    totalResults = parseInt($('.centered.ruled').text(), 10);
+    totalPages = Math.ceil(totalResults / 20);
+    console.log(totalResults + " results found, "+totalPages+" page(s) to scave!\n ");
 
     getAllSearchResults();
 }
 
-function requestPage(callback) {
-    request(pageToVisit, function(error, response, body) {
+// Make page request and parse the document body to '$' var
+function requestPage(pageURL, callback) {
+    request(pageURL, function(error, response, body) {
         if (error)
             console.log("Error: " + error);
         // Check status code (200 is HTTP OK)
@@ -48,11 +55,11 @@ function requestPage(callback) {
     });
 }
 
-// Parse the document body to '$' var
-function parseDocument() {
-    console.log("searching page for '" + search + "'...");
-    requestPage(getPageNums);
+// init
+function init() {
+    console.log("\nsearching page for '" + search + "'...\n ");
+    requestPage(pageToVisit, getPageNums);
 }
 
 // init
-parseDocument();
+init();
