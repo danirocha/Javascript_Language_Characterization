@@ -105,7 +105,6 @@ function getPackagesToInstall() {
             throw err;
 
         packsArray = data.toString().split(",");
-        packsArray.pop();
 
         if (packsArray.length === 0)
             console.log("You must specify a package to install!");

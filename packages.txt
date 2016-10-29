@@ -1,1 +1,1 @@
-angular,jquery,swiper,bootstrap,
+angular,jquery,swiper,bootstrap
