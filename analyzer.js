@@ -75,14 +75,18 @@ function printedConsole(file, linhaFinal,funcoes,numeroVariaveisPrograma) {
         if(funcoes[i].funcaoPai === 1)
         {
             numeroLinhasFuncoes = numeroLinhasFuncoes + funcoes[i].numeroLinhas;
-            checarChamadas(funcoes,i);
-            checarVariaveis(funcoes,i);
+            checarFilhos(funcoes,i,1);
+            checarFilhos(funcoes,i,2);
+            checarFilhos(funcoes,i,3);
         }
 
         console.log("       Total of var in function " + funcoes[i].nome + " = " + + funcoes[i].numeroVariaveis);
         numeroVariaveisFuncoes = numeroVariaveisFuncoes + funcoes[i].numeroVariaveis;
 
         console.log("       Total of functions call in function " + funcoes[i].nome + " = " + + funcoes[i].numeroChamadas);
+        console.log("       Total of if in function " + funcoes[i].nome + " = " + + funcoes[i].numeroIf);
+        console.log("       Total of for in function " + funcoes[i].nome + " = " + + funcoes[i].numeroFor);
+        console.log("       ---------------------- END OF FUNCTION----------------------------------------------");
     }
 
     console.log("Total lines of code of functions in " + file.substr(+4) + " = " + numeroLinhasFuncoes);
@@ -99,7 +103,7 @@ function contaLinhas(node,linhaFinalPrograma) {
 }
 
 function contaFuncoes(node,funcoes,linhaFinalFuncao) {
-    var funcao = {nome: '', numeroLinhas: '', funcaoPai: -1, numeroVariaveis: 0, numeroChamadas: 0};
+    var funcao = {nome: '', numeroLinhas: '', funcaoPai: -1, numeroVariaveis: 0, numeroChamadas: 0, numeroIf: 0, numeroFor: 0};
     var linhaFinal = 0;
 
     if(node.type === 'FunctionDeclaration')
@@ -118,6 +122,8 @@ function contaFuncoes(node,funcoes,linhaFinalFuncao) {
             enter: function(node) {
                 funcao.numeroVariaveis = funcao.numeroVariaveis + contaVariaveis(node);
                 funcao.numeroChamadas = funcao.numeroChamadas + contaChamadasFuncoes(node);
+                funcao.numeroIf = funcao.numeroIf + contaIfFuncoes(node);
+                funcao.numeroFor = funcao.numeroFor + contaForFuncoes(node);
             }
         });
 
@@ -141,7 +147,7 @@ function contaChamadasFuncoes(node) {
     return 0;
 }
 
-function checarChamadas(funcoes,i) {
+function checarFilhos(funcoes,i,escolha) {
     var j = i+1;
     var count = 0;
 
@@ -152,33 +158,50 @@ function checarChamadas(funcoes,i) {
     }
 
     var h = count;
-    var numeroChamadasFuncoes = 0;
+    var numeroFilhos = 0;
 
     while(h > 0)
     {
-        numeroChamadasFuncoes = numeroChamadasFuncoes + funcoes[i+h].numeroChamadas;
-        h--;
-        funcoes[i+h].numeroChamadas = funcoes[i+h].numeroChamadas - numeroChamadasFuncoes;
+        if(escolha === 1)
+        {
+            numeroFilhos = numeroFilhos + funcoes[i+h].numeroChamadas;
+            h--;
+            funcoes[i+h].numeroChamadas = funcoes[i+h].numeroChamadas - numeroFilhos;
+        }
+
+        if(escolha === 2)
+        {
+            numeroFilhos = numeroFilhos + funcoes[i+h].numeroVariaveis;
+            h--;
+            funcoes[i+h].numeroVariaveis = funcoes[i+h].numeroVariaveis - numeroFilhos;
+        }
+
+        if(escolha === 3)
+        {
+            numeroFilhos = numeroFilhos + funcoes[i+h].numeroIf;
+            h--;
+            funcoes[i+h].numeroIf = funcoes[i+h].numeroIf - numeroFilhos;
+        }
+
+        if(escolha === 4)
+        {
+            numeroFilhos = numeroFilhos + funcoes[i+h].numeroFor;
+            h--;
+            funcoes[i+h].numeroFor = funcoes[i+h].numeroFor - numeroFilhos;
+        }
     }
 }
 
-function checarVariaveis(funcoes,i) {
-    var j = i+1;
-    var count = 0;
+function contaIfFuncoes(node) {
+    if(node.type === 'IfStatement')
+        return 1;
 
-    while(j < funcoes.length && funcoes[j].funcaoPai !== 1)
-    {
-        count++;
-        j++;
-    }
+    return 0;
+}
 
-    var h = count;
-    var numeroVariaveisFuncoes = 0;
+function contaForFuncoes(node) {
+    if(node.type === 'ForStatement')
+        return 1;
 
-    while(h > 0)
-    {
-        numeroVariaveisFuncoes = numeroVariaveisFuncoes + funcoes[i+h].numeroVariaveis;
-        h--;
-        funcoes[i+h].numeroVariaveis = funcoes[i+h].numeroVariaveis - numeroVariaveisFuncoes;
-    }
+    return 0;
 }
