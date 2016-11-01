@@ -1,13 +1,27 @@
 var request = require('request');
 var cheerio = require('cheerio');
 var Jetty = require("jetty");
+var fs = require('fs');
 // var URL = require('url-parse');
 
 var jetty = new Jetty(process.stdout);
 var search = "a";
 var pageCount = 1;
-var pageToVisit = "https://www.npmjs.com/search?q=" + search + "&page=" + pageCount;
-var $, totalResults, totalPages, packages = [];
+var pageToVisit = "https://www.npmjs.com/search?q=" + search + "&page=";
+var $, totalResults, totalPages, packages;
+
+// function getJSONData() {
+//   var allData;
+//
+//   fs.readFile('./data.json', function(err, data) {
+//       if (err)
+//           throw err;
+//       allData = JSON.parse(data.toString());
+//       // return allData;
+//   });
+//
+//   return allData === undefined? []:allData;
+// }
 
 // Get all search results into individual objects
 function getAllSearchResults() {
@@ -16,21 +30,31 @@ function getAllSearchResults() {
     jetty.text("page "+pageCount+": "+percent+"% read");
 
     if (pageCount <= totalPages) {
-        var searchResult = $('.search-results .package-details');
-        searchResult.each(function(index) {
-            var obj = {
-                name: $(this).find(".name").text(),
-                author: $(this).find(".author").text(),
-                stars: Number($(this).find(".stars").text()),
-                version: $(this).find(".version").text()
-            };
+        fs.readFile('./data.json', function(err, data) {
+            if (err)
+                throw err;
+            packages = JSON.parse(data.toString());
 
-            packages.push(obj);
+            jetty.text(" ("+packages.length+"/"+totalResults+")");
+            var searchResult = $('.search-results .package-details');
+            searchResult.each(function(index) {
+                var obj = {
+                    name: $(this).find(".name").text(),
+                    author: $(this).find(".author").text(),
+                    stars: Number($(this).find(".stars").text()),
+                    version: $(this).find(".version").text()
+                };
+                if(packages.indexOf(obj) === -1)
+                  packages.push(obj);
+            });
+            // console.log(packages, packages.length);
+            // jetty.text(" ("+packages.length+"/"+totalResults+")");
+            fs.writeFileSync('./data.json', JSON.stringify(packages), 'utf-8');
+            pageCount++;
+            requestPage(pageToVisit, getAllSearchResults);
         });
-        // console.log(packages, packages.length);
-        pageCount++;
-        requestPage(pageToVisit, getAllSearchResults);
-    } else
+    }
+    else
         console.log("\nDone! all results for '"+search+"' were captured.\n ");
 }
 
@@ -45,7 +69,7 @@ function getPageNums() {
 
 // Make page request and parse the document body to '$' var
 function requestPage(pageURL, callback) {
-    request(pageURL, function(error, response, body) {
+    request(pageURL+pageCount, function(error, response, body) {
         if (error)
             console.log("Error: " + error);
         // Check status code (200 is HTTP OK)
