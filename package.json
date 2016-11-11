@@ -22,12 +22,12 @@
   "dependencies": {
     "cheerio": "^0.22.0",
     "child_process": "^1.0.2",
-    "esprima": "^3.1.0",
+    "esprima": "^3.1.1",
     "estraverse": "^4.2.0",
     "fs": "0.0.1-security",
     "fs-finder": "^1.8.1",
     "jetty": "^0.2.1",
     "path": "^0.12.7",
-    "request": "^2.76.0"
+    "request": "^2.78.0"
   }
 }

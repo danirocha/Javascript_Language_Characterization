@@ -58,19 +58,31 @@ function esprimaParse(text, file) {
         }
     });
 
-    printedConsole(file,linhaFinalPrograma,funcoes,numeroVariaveisPrograma);
+    escreverArquivo(file,linhaFinalPrograma,funcoes,numeroVariaveisPrograma);
 }
 
-function printedConsole(file, linhaFinal,funcoes,numeroVariaveisPrograma) {
+function escreverArquivo(file, linhaFinal, funcoes, numeroVariaveisPrograma) {
+    
+    var infos = "";
     var numeroVariaveisFuncoes = 0;
     var numeroLinhasFuncoes = 0;
 
-    console.log("---------------------------------------------------------------------");
-    console.log("Total lines of code of " + file.substr(+4) + " file = " + linhaFinal);
-    console.log("Total number of functions of  " + file.substr(+4) + " file = " + funcoes.length);
+    infos = infos + "---------------------------------------------------------------------\r\n"
+                  + "INFORMATION ABOUT THE PROGRAM\r\n"
+                  + "   Total lines of code of " + file.substr(+4) + " file = " + linhaFinal + "\r\n"
+                  + "   Total number of functions of  " + file.substr(+4) + " file = " + funcoes.length + "\r\n"
+                  + "   Total of var in file " + file.substr(+4) + " = " + numeroVariaveisPrograma + "\r\n";
+                  + "---------------------------------------------------------------------\r\n\r\n\r\n";
+
+    infos = infos + "INFORMATION ABOUT EACH FUNCTION\r\n"
+                  + "-----------------------------------------------------------------------------------------\r\n"
+                  + "|   nome    |   LOC |   variaveis   |   chamada funçoes |   complexidade ciclomatica    |\r\n"
+                  + "-----------------------------------------------------------------------------------------\r\n";
 
     for (var i = 0; i < funcoes.length; i++) {
-        console.log("       The function: " + funcoes[i].nome + " has " + funcoes[i].numeroLinhas + " lines");
+        infos = infos + "|  " + funcoes[i].nome + " |   " + funcoes[i].numeroLinhas + " |   " + funcoes[i].numeroVariaveis + " |    "
+                      + funcoes[i].numeroChamadas +  "  |   " + (funcoes[i].numeroIf + funcoes[i].numeroFor) + "    |   \r\n"
+                      + "-----------------------------------------------------------------------------------------\r\n";
 
         if(funcoes[i].funcaoPai === 1)
         {
@@ -80,19 +92,20 @@ function printedConsole(file, linhaFinal,funcoes,numeroVariaveisPrograma) {
             checarFilhos(funcoes,i,3);
         }
 
-        console.log("       Total of var in function " + funcoes[i].nome + " = " + + funcoes[i].numeroVariaveis);
         numeroVariaveisFuncoes = numeroVariaveisFuncoes + funcoes[i].numeroVariaveis;
-
-        console.log("       Total of functions call in function " + funcoes[i].nome + " = " + + funcoes[i].numeroChamadas);
-        console.log("       Total of if in function " + funcoes[i].nome + " = " + + funcoes[i].numeroIf);
-        console.log("       Total of for in function " + funcoes[i].nome + " = " + + funcoes[i].numeroFor);
-        console.log("       ---------------------- END OF FUNCTION----------------------------------------------");
     }
 
-    console.log("Total lines of code of functions in " + file.substr(+4) + " = " + numeroLinhasFuncoes);
-    console.log("Total of var in file " + file.substr(+4) + " = " + numeroVariaveisPrograma);
-    console.log("Total of global var in file " + file.substr(+4) + " = " + (numeroVariaveisPrograma - numeroVariaveisFuncoes));
-    console.log("---------------------------------------------------------------------");
+    //infos = infos + "Total lines of code of functions in " + file.substr(+4) + " = " + numeroLinhasFuncoes + "\r\n";
+    //infos = infos + "Total of global var in file " + file.substr(+4) + " = " + (numeroVariaveisPrograma - numeroVariaveisFuncoes) + "\r\n";
+   // infos = infos + "---------------------------------------------------------------------\r\n";
+
+    fs.writeFile("Relatorio Programa.txt", infos, function(err) {
+        if(err) {
+            return console.log(err);
+        }
+
+        console.log("The file was saved!");
+    }); 
 }
 
 function contaLinhas(node,linhaFinalPrograma) {
@@ -106,11 +119,15 @@ function contaFuncoes(node,funcoes,linhaFinalFuncao) {
     var funcao = {nome: '', numeroLinhas: '', funcaoPai: -1, numeroVariaveis: 0, numeroChamadas: 0, numeroIf: 0, numeroFor: 0};
     var linhaFinal = 0;
 
-    if(node.type === 'FunctionDeclaration')
+    if((node.type === 'FunctionDeclaration') || (node.type === 'FunctionExpression'))
     {
         linhaFinal = node.loc.end.line;
 
-        funcao.nome = node.id.name;
+        if(node.id !== null)
+            funcao.nome = node.id.name;
+        else
+            funcao.nome = '';
+
         funcao.numeroLinhas = (node.loc.end.line - node.loc.start.line) + 1;
 
         if(linhaFinal > linhaFinalFuncao)
