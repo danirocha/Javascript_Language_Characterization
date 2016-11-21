@@ -2,6 +2,7 @@ var fs = require('fs');
 var path = require('path');
 var esprima = require('esprima');
 var estraverse = require('estraverse');
+var tableN = require('ascii-data-table').default;
 
 var dirName = ".\\src";
 
@@ -63,26 +64,37 @@ function esprimaParse(text, file) {
 
 function escreverArquivo(file, linhaFinal, funcoes, numeroVariaveisPrograma) {
     
-    var infos = "";
+    var infosPrograma = "";
+    var infosFuncoes = "";
+    var infosNosEsprima = "";
     var numeroVariaveisFuncoes = 0;
     var numeroLinhasFuncoes = 0;
 
-    infos = infos + "---------------------------------------------------------------------\r\n"
+    infosPrograma = infosPrograma + "---------------------------------------------------------------------\n"
                   + "INFORMATION ABOUT THE PROGRAM\r\n"
-                  + "   Total lines of code of " + file.substr(+4) + " file = " + linhaFinal + "\r\n"
-                  + "   Total number of functions of  " + file.substr(+4) + " file = " + funcoes.length + "\r\n"
-                  + "   Total of var in file " + file.substr(+4) + " = " + numeroVariaveisPrograma + "\r\n";
-                  + "---------------------------------------------------------------------\r\n\r\n\r\n";
+                  + "   Total lines of code of " + file.substr(+4) + " file = " + linhaFinal + "\n"
+                  + "   Total number of functions of  " + file.substr(+4) + " file = " + funcoes.length + "\n"
+                  + "   Total of var in file " + file.substr(+4) + " = " + numeroVariaveisPrograma + "\n"
+                  + "---------------------------------------------------------------------\n";
 
-    infos = infos + "INFORMATION ABOUT EACH FUNCTION\r\n"
-                  + "-----------------------------------------------------------------------------------------\r\n"
-                  + "|   nome    |   LOC |   variaveis   |   chamada funçoes |   complexidade ciclomatica    |\r\n"
-                  + "-----------------------------------------------------------------------------------------\r\n";
+    infosFuncoes = infosFuncoes + "INFORMATION ABOUT EACH FUNCTION\n";
+    infosNosEsprimaHeader = "INFORMATION ABOUT EACH FUNCTION AND ESPRIMA NODE";
 
+    var rowsFuncoes = [['nome', 'LOC', 'variaveis', 'chamada de funcoes', 'complexidade ciclomatica  (if, for, while, do...While, switch cases)']];
+    
     for (var i = 0; i < funcoes.length; i++) {
-        infos = infos + "|  " + funcoes[i].nome + " |   " + funcoes[i].numeroLinhas + " |   " + funcoes[i].numeroVariaveis + " |    "
-                      + funcoes[i].numeroChamadas +  "  |   " + (funcoes[i].numeroIf + funcoes[i].numeroFor) + "    |   \r\n"
-                      + "-----------------------------------------------------------------------------------------\r\n";
+        rowsFuncoes.push([funcoes[i].nome, funcoes[i].numeroLinhas, funcoes[i].numeroVariaveis, 
+                   funcoes[i].numeroChamadas, funcoes[i].numeroIf + funcoes[i].numeroFor + funcoes[i].numeroWhile + funcoes[i].numeroDoWhile + funcoes[i].numeroSwitchCase]);
+    
+
+        var rowsNosEsprimas = [['AssignmentExpression', 'ArrayExpression', 'BlockStatement', 'BinaryExpression' ,'BreakStatement',
+                            'CallExpression', 'CatchClause', 'ConditionalExpression', 'ContinueStatement', 'DoWhileStatement',
+                            'DebuggerStatement', 'EmptyStatement', 'ExpressionStatement', 'ForStatement', 'ForInStatement',
+                            'FunctionDeclaration', 'FunctionExpression', 'Identifier', 'IfStatement', 'Literal', 'LabeledStatement',
+                            'LogicalExpression', 'MemberExpression', 'NewExpression', 'ObjectExpression', 'Program', 'Property',
+                            'ReturnStatement', 'SequenceExpression', 'SwitchStatement', 'SwitchCase', 'ThisExpression',
+                            'ThrowStatement', 'TryStatement', 'UnaryExpression', 'UpdateExpression', 'VariableDeclaration',
+                            'VariableDeclarator', 'WhileStatement', 'WithStatement']];
 
         if(funcoes[i].funcaoPai === 1)
         {
@@ -93,18 +105,24 @@ function escreverArquivo(file, linhaFinal, funcoes, numeroVariaveisPrograma) {
         }
 
         numeroVariaveisFuncoes = numeroVariaveisFuncoes + funcoes[i].numeroVariaveis;
+
+        var tableE = tableN.table(rowsNosEsprimas, 175);
+        infosNosEsprima = infosNosEsprima + "\n FUNCAO " + funcoes[i].nome + "\n" + tableE;
     }
+
+    var tableC = tableN.table(rowsFuncoes, 100);
+    infosFuncoes = infosFuncoes + tableC + "\n---------------------------------------------------------------------\n";
 
     //infos = infos + "Total lines of code of functions in " + file.substr(+4) + " = " + numeroLinhasFuncoes + "\r\n";
     //infos = infos + "Total of global var in file " + file.substr(+4) + " = " + (numeroVariaveisPrograma - numeroVariaveisFuncoes) + "\r\n";
    // infos = infos + "---------------------------------------------------------------------\r\n";
 
-    fs.writeFile("Relatorio Programa.txt", infos, function(err) {
+    fs.writeFile("Relatorio Programa " + file.substr(+4) + ".txt", infosPrograma + infosFuncoes + infosNosEsprimaHeader + infosNosEsprima, function(err) {
         if(err) {
             return console.log(err);
         }
 
-        console.log("The file was saved!");
+        console.log("The analyze for " + file.substr(+4) + " was saved!");
     }); 
 }
 
@@ -116,7 +134,7 @@ function contaLinhas(node,linhaFinalPrograma) {
 }
 
 function contaFuncoes(node,funcoes,linhaFinalFuncao) {
-    var funcao = {nome: '', numeroLinhas: '', funcaoPai: -1, numeroVariaveis: 0, numeroChamadas: 0, numeroIf: 0, numeroFor: 0};
+    var funcao = {nome: '', numeroLinhas: '', funcaoPai: -1, numeroVariaveis: 0, numeroChamadas: 0, numeroIf: 0, numeroFor: 0, numeroWhile: 0, numeroDoWhile: 0, numeroSwitchCase: 0};
     var linhaFinal = 0;
 
     if((node.type === 'FunctionDeclaration') || (node.type === 'FunctionExpression'))
@@ -141,6 +159,9 @@ function contaFuncoes(node,funcoes,linhaFinalFuncao) {
                 funcao.numeroChamadas = funcao.numeroChamadas + contaChamadasFuncoes(node);
                 funcao.numeroIf = funcao.numeroIf + contaIfFuncoes(node);
                 funcao.numeroFor = funcao.numeroFor + contaForFuncoes(node);
+                funcao.numeroWhile = funcao.numeroWhile + contaWhileFuncoes(node);
+                funcao.numeroDoWhile = funcao.numeroDoWhile + contaDoWhileFuncoes(node);
+                funcao.numeroSwitchCase = funcao.numeroSwitchCase + contaSwitchCaseFuncoes(node);
             }
         });
 
@@ -218,6 +239,27 @@ function contaIfFuncoes(node) {
 
 function contaForFuncoes(node) {
     if(node.type === 'ForStatement')
+        return 1;
+
+    return 0;
+}
+
+function contaWhileFuncoes(node) {
+    if(node.type === 'WhileStatement')
+        return 1;
+
+    return 0;
+}
+
+function contaDoWhileFuncoes(node) {
+    if(node.type === 'DoWhileStatement')
+        return 1;
+
+    return 0;
+}
+
+function contaSwitchCaseFuncoes(node) {
+    if(node.type === 'SwitchCase')
         return 1;
 
     return 0;
