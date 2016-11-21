@@ -1,6 +1,6 @@
-var mysql = require('mysql');
-var exports = module.exports = {};
-var connection;
+var mysql = require('mysql'),
+    exports = module.exports = {},
+    connection;
 
 exports.connectDB = function(options) {
   connection = mysql.createConnection(options);
@@ -14,11 +14,19 @@ exports.connectDB = function(options) {
   });
 };
 
-exports.addPackage = function(values) {
-  var insertValues = values;
-  
-  connection.query('INSERT IGNORE INTO packages (name,author,stars,version,description,tags,github_url) VALUES (?,?,?,?,?,?,?)', insertValues, function (err, results, fields) {
-    if (err) throw err;
+exports.addPackages = function(values) {
+  var insertValues = values,
+      inserted;
+
+  return inserted = connection.query('INSERT IGNORE INTO packages (name,author,stars,version,description,tags) VALUES ?', [insertValues], function (err, results, fields) {
+    if (err) {
+      throw err;
+      return false;
+    }
+    else {
+      console.log("inserted successfully!");
+      return true;
+    }
   });
 };
 

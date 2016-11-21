@@ -16,38 +16,36 @@ var $, $github, totalResults, totalPages, packages,
               database : 'my_db'
             };
 
-function getPackagesInfos() {
-    var array = [
-        $(this).find(".name").text(), // name
-        $(this).find(".author").text(), // author
-        Number($(this).find(".stars").text()), // stars
-        $(this).find(".version").text(), // version
-        $(this).find(".description").text(), // description
-        $(this).find(".keywords").text().replace(/\s/g,'') // tags
-    ];
-
+function getGithubURLs(packages) {
     // get github url
-    var url = "https://www.npmjs.com/package/"+array[0];
-    var matched = false;
+    var githubUrls = [];
 
-    request(url, function(error, response, body) {
-        if (error)
-            console.log("Error: " + error);
-        // Check status code (200 is HTTP OK)
-        if (response.statusCode === 200)
-            $github = cheerio.load(body);
+    for(key in packages){
+        var url = "https://www.npmjs.com/package/"+packages[key][0];
+        var matched = false;
 
-        var elem = $github('.box li a');
-        elem.each(function(index) {
-            var urlAttr = elem[index].attribs.href;
-            if ((urlAttr.indexOf("github") !== -1) && !matched) {
-                matched = true;
-                array.push(urlAttr);
-                packages.push(array);
-                // db.addPackage(array);
+        request(url, function(error, response, body) {
+            if (error)
+                console.log("Error: " + error);
+            // Check status code (200 is HTTP OK)
+            if (response.statusCode === 200) {
+                $github = cheerio.load(body);
+
+                var elem = $github('.box li a');
+                elem.each(function(index) {
+                    var urlAttr = elem[index].attribs.href;
+                    if ((urlAttr.indexOf("github") !== -1) && !matched) {
+                        matched = true;
+                        var array = [urlAttr,packages[key][0]];
+                        // db.addPackage(array);
+                        githubUrls.push(array);
+                        return;
+                    }
+                });
             }
         });
-    });
+    }
+    console.log(githubUrls);
 }
 
 // Get all search results into individual objects
@@ -56,10 +54,27 @@ function getAllSearchResults() {
     jetty.moveTo([4,0]);
     jetty.text("page "+pageCount+": "+percent+"% read");
 
-    if (pageCount <= 40) {
+    if (pageCount <= totalPages) {
         packages = [];
         var searchResult = $('.search-results .package-details');
-        searchResult.each(getPackagesInfos);
+        searchResult.each(function() {
+            var array = [
+                $(this).find(".name").text(), // name
+                $(this).find(".author").text(), // author
+                Number($(this).find(".stars").text()), // stars
+                $(this).find(".version").text(), // version
+                $(this).find(".description").text(), // description
+                $(this).find(".keywords").text().replace(/\s/g,'') // tags
+            ];
+
+            packages.push(array);
+        });
+
+        if(db.addPackages(packages)) {
+            getGithubURLs(packages);
+            pageCount++;
+            requestPage(pageToVisit, getAllSearchResults);
+        }
     }
     else {
         db.closeDB();
