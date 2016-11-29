@@ -15,13 +15,13 @@ var nosEsprima = ['AssignmentExpression', 'ArrayExpression', 'BlockStatement', '
 
 
 var quantidadeNosEsprimas = [0, 0, 0, 0, 0,
-                  0, 0, 0, 0, 0,
-                  0, 0, 0, 0, 0,
-                  0, 0, 0, 0, 0,
-                  0, 0, 0, 0,
-                  0, 0, 0, 0, 0,
-                  0, 0, 0, 0, 0,
-                  0, 0, 0, 0, 0];
+                             0, 0, 0, 0, 0,
+                             0, 0, 0, 0, 0,
+                             0, 0, 0, 0, 0,
+                             0, 0, 0, 0,
+                             0, 0, 0, 0, 0,
+                             0, 0, 0, 0, 0,
+                             0, 0, 0, 0, 0];
 
 var dirName = ".\\src";
 
@@ -86,16 +86,15 @@ function contaLinhas(node,linhaFinalPrograma) {
 }
 
 function contaFuncoes(node,funcoes,linhaFinalFuncao) {
-    var funcao = {nome: '', numeroLinhas: 0, funcaoPai: -1, numeroVariaveis: 0, numeroChamadas: 0, numeroIf: 0, numeroFor: 0,
-                  numeroWhile: 0, numeroDoWhile: 0, numeroSwitchCase: 0,
-                  numeroAssignment: 0, Array: 0, Block: 0, Binary:0, Break: 0, Catch: 0, Conditional: 0, Continue: 0,
-                  Debugger: 0, Empty: 0, Expression: 0,
-                  ForIn: 0, numeroFunctionD: 0, FunctionE: 0,
-                  Identifier: 0, Literal: 0, Label: 0,
-                  Logical: 0, Member: 0, NewExpression: 0, Object: 0,
-                  Property: 0, Return: 0, Sequence: 0, Switch: 0,
-                  This: 0, Throw: 0, Try: 0, Unary: 0, Update: 0,
-                  numeroVariaveisD: 0, numeroWhile: 0, With: 0
+    var funcao = {nome: '', numeroLinhas: 0, funcaoPai: -1, 
+                  numeroAssignment: 0, Array: 0, Block: 0, Binary:0, Break: 0, 
+                  numeroChamadas: 0, Catch: 0, Conditional: 0, Continue: 0, numeroDoWhile: 0,
+                  Debugger: 0, Empty: 0, Expression: 0, numeroFor: 0, ForIn: 0,
+                  numeroFunctionD: 0, FunctionE: 0, Identifier: 0, numeroIf: 0, Literal: 0, Label: 0,
+                  Logical: 0, Member: 0, NewExpression: 0, Object: 0, Property: 0,
+                  Return: 0, Sequence: 0, Switch: 0, numeroSwitchCase: 0, This: 0,
+                  Throw: 0, Try: 0, Unary: 0, Update: 0,
+                  numeroVariaveis: 0, numeroVariaveisD: 0, numeroWhile: 0, With: 0
                 };
 
     var linhaFinal = 0;
@@ -107,7 +106,7 @@ function contaFuncoes(node,funcoes,linhaFinalFuncao) {
         if(node.id !== null)
             funcao.nome = node.id.name;
         else
-            funcao.nome = '';
+            funcao.nome = 'Funcao sem nome';
 
         funcao.numeroLinhas = (node.loc.end.line - node.loc.start.line) + 1;
 
@@ -122,13 +121,45 @@ function contaFuncoes(node,funcoes,linhaFinalFuncao) {
                 for(var j = 0; j < nosEsprima.length; j++) 
                     contaNos(node, nosEsprima[j], j);
 
+                funcao.numeroAssignment = quantidadeNosEsprimas[0];
+                funcao.Array = quantidadeNosEsprimas[1];
+                funcao.Block = quantidadeNosEsprimas[2];
+                funcao.Binary = quantidadeNosEsprimas[3];
+                funcao.Break = quantidadeNosEsprimas[4];
+                funcao.numeroChamadas = quantidadeNosEsprimas[5]
+                funcao.Catch = quantidadeNosEsprimas[6];
+                funcao.Conditional = quantidadeNosEsprimas[7];
+                funcao.Continue = quantidadeNosEsprimas[8];
+                funcao.numeroDoWhile = quantidadeNosEsprimas[9];
+                funcao.Debugger = quantidadeNosEsprimas[10];
+                funcao.Empty = quantidadeNosEsprimas[11];
+                funcao.Expression = quantidadeNosEsprimas[12];
+                funcao.numeroFor = quantidadeNosEsprimas[13];
+                funcao.ForIn = quantidadeNosEsprimas[14];
+                funcao.numeroFunctionD = quantidadeNosEsprimas[15];
+                funcao.FunctionE = quantidadeNosEsprimas[16];
+                funcao.Identifier = quantidadeNosEsprimas[17];
+                funcao.numeroIf = quantidadeNosEsprimas[18];
+                funcao.Literal = quantidadeNosEsprimas[19];
+                funcao.Label = quantidadeNosEsprimas[20];
+                funcao.Logical = quantidadeNosEsprimas[21];
+                funcao.Member = quantidadeNosEsprimas[22];
+                funcao.NewExpression = quantidadeNosEsprimas[23];
+                funcao.Object = quantidadeNosEsprimas[24];
+                funcao.Property = quantidadeNosEsprimas[25];
+                funcao.Return = quantidadeNosEsprimas[26];
+                funcao.Sequence = quantidadeNosEsprimas[27];
+                funcao.Switch = quantidadeNosEsprimas[28];
+                funcao.numeroSwitchCase = quantidadeNosEsprimas[29];
+                funcao.This = quantidadeNosEsprimas[30];
+                funcao.Throw = quantidadeNosEsprimas[31];
+                funcao.Try = quantidadeNosEsprimas[32];
+                funcao.Unary = quantidadeNosEsprimas[33];
+                funcao.Update = quantidadeNosEsprimas[34];
                 funcao.numeroVariaveis = quantidadeNosEsprimas[35];
-                funcao.numeroChamadas = quantidadeNosEsprimas[5];
-                //funcao.numeroIf = funcao.numeroIf + contaIfFuncoes(node);
-               // funcao.numeroFor = funcao.numeroFor + contaForFuncoes(node);
-               // funcao.numeroWhile = funcao.numeroWhile + contaWhileFuncoes(node);
-               // funcao.numeroDoWhile = funcao.numeroDoWhile + contaDoWhileFuncoes(node);
-               // funcao.numeroSwitchCase = funcao.numeroSwitchCase + contaSwitchCaseFuncoes(node);
+                funcao.numeroVariaveisD = quantidadeNosEsprimas[36];
+                funcao.numeroWhile = quantidadeNosEsprimas[37];
+                funcao.With = quantidadeNosEsprimas[38]; 
             }
         });
 
