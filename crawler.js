@@ -15,38 +15,12 @@ var request = require('request'),
               database : 'my_db'
             };
 
-// // get github url
-// function getGithubURLs(packages) {
-//     var githubUrls = [];
-//
-//     for(key in packages){
-//         var url = "https://www.npmjs.com/package/"+packages[key][0],
-//         matched = false;
-//
-//         request(url, function(error, response, body) {
-//             if (error)
-//                 console.log("Error: " + error);
-//             // Check status code (200 is HTTP OK)
-//             if (response.statusCode === 200) {
-//                 $github = cheerio.load(body);
-//
-//                 var elem = $github('.box li a');
-//                 elem.each(function(index) {
-//                     var urlAttr = elem[index].attribs.href;
-//                     if ((urlAttr.indexOf("github") !== -1) && !matched) {
-//                         matched = true;
-//                         var array = [urlAttr,packages[key][0]];
-//                         // db.addPackage(array);
-//                         githubUrls.push(array);
-//                         return;
-//                     }
-//                 });
-//             }
-//         });
-//     }
-//     console.log(githubUrls);
-// }
-
+// CTRL + SHIFT + J
+/**
+ * getNextLetter - description
+ *
+ * @return {type}  description
+ */
 function getNextLetter() {
     var aux = letters.indexOf(search)+1;
     if(aux > letters.length-1)
