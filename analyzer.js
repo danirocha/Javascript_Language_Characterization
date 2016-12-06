@@ -23,6 +23,8 @@ var quantidadeNosEsprimas = [0, 0, 0, 0, 0,
                              0, 0, 0, 0, 0,
                              0, 0, 0, 0, 0];
 
+var funcoesSemNome = 1;
+
 var dirName = ".\\src";
 
 readDirectory();
@@ -106,14 +108,18 @@ function contaFuncoes(node,funcoes,linhaFinalFuncao) {
         if(node.id !== null)
             funcao.nome = node.id.name;
         else
-            funcao.nome = 'Funcao sem nome';
+        {
+            funcao.nome = 'Funcao sem nome' + funcoesSemNome;
+            funcoesSemNome++;
+        }
 
         funcao.numeroLinhas = (node.loc.end.line - node.loc.start.line) + 1;
 
         if(linhaFinal > linhaFinalFuncao)
+        {
             funcao.funcaoPai = 1;
-        
-        linhaFinalFuncao = node.loc.end.line;
+            linhaFinalFuncao = node.loc.end.line;
+        }
 
         estraverse.traverse(node, {
             enter: function(node) {
@@ -196,37 +202,242 @@ function checarFilhos(funcoes,i,escolha) {
         j++;
     }
 
-    var h = count;
-    var numeroFilhos = 0;
-
-    while(h > 0)
+    
+    while(count > 0)
     {
-        if(escolha === 1)
+        
+        if(escolha === 0)
         {
-            numeroFilhos = numeroFilhos + funcoes[i+h].numeroChamadas;
-            h--;
-            funcoes[i].numeroChamadas = funcoes[i].numeroChamadas - numeroFilhos;
+            funcoes[i].numeroAssignment = funcoes[i].numeroAssignment - funcoes[i+count].numeroAssignment;
+            count--;
         }
 
-        if(escolha === 2)
+        else if (escolha === 1)
         {
-            numeroFilhos = numeroFilhos + funcoes[i+h].numeroVariaveis;
-            h--;
-            funcoes[i].numeroVariaveis = funcoes[i].numeroVariaveis - numeroFilhos;
+            funcoes[i].Array = funcoes[i].Array - funcoes[i+count].Array;
+            count--;
         }
 
-        if(escolha === 3)
+        else if(escolha === 2)
         {
-            numeroFilhos = numeroFilhos + funcoes[i+h].numeroIf;
-            h--;
-            funcoes[i].numeroIf = funcoes[i].numeroIf - numeroFilhos;
+            funcoes[i].Block = funcoes[i].Block - funcoes[i+count].Block;
+            count--;
         }
 
-        if(escolha === 4)
+        else if(escolha === 3)
         {
-            numeroFilhos = numeroFilhos + funcoes[i+h].numeroFor;
-            h--;
-            funcoes[i].numeroFor = funcoes[i].numeroFor - numeroFilhos;
+            funcoes[i].Binary = funcoes[i].Binary + funcoes[i+count].Binary;
+            count--;
+        }
+
+        else if(escolha === 4)
+        {
+            funcoes[i].Break = funcoes[i].Break + funcoes[i+count].Break;
+            count--;
+        }
+
+        else if(escolha === 5)
+        {
+            funcoes[i].numeroChamadas = funcoes[i].numeroChamadas + funcoes[i+count].numeroChamadas;
+            count--;
+        }
+
+        else if(escolha === 6)
+        {
+            funcoes[i].Catch = funcoes[i].Catch + funcoes[i+count].Catch;
+            count--;
+        }
+
+        else if(escolha === 7)
+        {
+            funcoes[i].Conditional = funcoes[i].Conditional + funcoes[i+count].Conditional;
+            count--;
+        }
+
+        else if(escolha === 8)
+        {
+            funcoes[i].Continue = funcoes[i].Continue + funcoes[i+count].Continue;
+            count--;
+        }
+
+        else if(escolha === 9)
+        {
+            funcoes[i].numeroDoWhile = funcoes[i].numeroDoWhile + funcoes[i+count].numeroDoWhile;
+            count--;
+        }
+
+        else if(escolha === 10)
+        {
+            funcoes[i].Debugger = funcoes[i].Debugger + funcoes[i+count].Debugger;
+            count--;
+        }
+
+        else if(escolha === 11)
+        {
+            funcoes[i].Empty = funcoes[i].Empty + funcoes[i+count].Empty;
+            count--;
+        }
+
+        else if(escolha === 12)
+        {
+            funcoes[i].Expression = funcoes[i].Expression + funcoes[i+count].Expression;
+            count--;
+        }
+
+        else if(escolha === 13)
+        {
+            funcoes[i].numeroFor = funcoes[i].numeroFor + funcoes[i+count].numeroFor;
+            count--;
+        }
+
+        else if(escolha === 14)
+        {
+            funcoes[i].ForIn = funcoes[i].ForIn + funcoes[i+count].ForIn;
+            count--;
+        }
+
+        else if(escolha === 15)
+        {
+            funcoes[i].numeroFunctionD = funcoes[i].numeroFunctionD + funcoes[i+count].numeroFunctionD;
+            count--;
+        }
+
+        else if(escolha === 16)
+        {
+            funcoes[i].FunctionE = funcoes[i].FunctionE + funcoes[i+count].FunctionE;
+            count--;
+        }
+
+        else if(escolha === 17)
+        {
+            funcoes[i].Identifier = funcoes[i].Identifier + funcoes[i+count].Identifier;
+            count--;
+        }
+
+        else if(escolha === 18)
+        {
+            funcoes[i].numeroIf = funcoes[i].numeroIf + funcoes[i+count].numeroIf;
+            count--;
+        }
+
+        else if(escolha === 19)
+        {
+            funcoes[i].Literal = funcoes[i].Literal + funcoes[i+count].Literal;
+            count--;
+        }
+
+        else if(escolha === 20)
+        {
+            funcoes[i].Label = funcoes[i].Label + funcoes[i+count].Label;
+            count--;
+        }
+
+        else if(escolha === 21)
+        {
+            funcoes[i].Logical = funcoes[i].Logical + funcoes[i+count].Logical;
+            count--;
+        }
+
+        else if(escolha === 22)
+        {
+            funcoes[i].Member = funcoes[i].Member + funcoes[i+count].Member;
+            count--;
+        }
+
+        else if(escolha === 23)
+        {
+            funcoes[i].NewExpression = funcoes[i].NewExpression + funcoes[i+count].NewExpression;
+            count--;
+        }
+
+        else if(escolha === 24)
+        {
+            funcoes[i].Object = funcoes[i].Object + funcoes[i+count].Object;
+            count--;
+        }
+
+        else if(escolha === 25)
+        {
+            funcoes[i].Property = funcoes[i].Property + funcoes[i+count].Property;
+            count--;
+        }
+
+        else if(escolha === 26)
+        {
+            funcoes[i].Return = funcoes[i].Return + funcoes[i+count].Return;
+            count--;
+        }
+
+        else if(escolha === 27)
+        {
+            funcoes[i].Sequence = funcoes[i].Sequence + funcoes[i+count].Sequence;
+            count--;
+        }
+
+        else if(escolha === 28)
+        {
+            funcoes[i].Switch = funcoes[i].Switch + funcoes[i+count].Switch;
+            count--;
+        }
+
+        else if(escolha === 29)
+        {
+            funcoes[i].numeroSwitchCase = funcoes[i].numeroSwitchCase + funcoes[i+count].numeroSwitchCase;
+            count--;
+        }
+
+        else if(escolha === 30)
+        {
+            funcoes[i].This = funcoes[i].This + funcoes[i+count].This;
+            count--;
+        }
+
+        else if(escolha === 31)
+        {
+            funcoes[i].Throw = funcoes[i].Throw + funcoes[i+count].Throw;
+            count--;
+        }
+
+        else if(escolha === 32)
+        {
+            funcoes[i].Try = funcoes[i].Try + funcoes[i+count].Try;
+            count--;
+        }
+
+        else if(escolha === 33)
+        {
+            funcoes[i].Unary = funcoes[i].Unary + funcoes[i+count].Unary;
+            count--;
+        }
+
+        else if(escolha === 34)
+        {
+            funcoes[i].Update = funcoes[i].Update + funcoes[i+count].Update;
+            count--;
+        }
+
+        else if(escolha === 35)
+        {
+            funcoes[i].numeroVariaveis = funcoes[i].numeroVariaveis + funcoes[i+count].numeroVariaveis;
+            count--;
+        }
+
+        else if(escolha === 36)
+        {
+            funcoes[i].numeroVariaveisD = funcoes[i].numeroVariaveisD + funcoes[i+count].numeroVariaveisD;
+            count--;
+        }
+
+        else if(escolha === 37)
+        {
+            funcoes[i].numeroWhile = funcoes[i].numeroWhile + funcoes[i+count].numeroWhile;
+            count--;
+        }
+
+         else if(escolha === 38)
+        {
+            funcoes[i].With = funcoes[i].With + funcoes[i+count].With;
+            count--;
         }
     }
 }
@@ -264,6 +475,13 @@ function escreverArquivo(file, linhaFinal, funcoes, numeroVariaveisPrograma) {
                             'VariableDeclarator', 'WhileStatement', 'WithStatement']];
 
     for (var i = 0; i < funcoes.length; i++) {
+        
+        if(funcoes[i].funcaoPai === 1)
+        {
+            for(var j = 0; j < 39; j++)
+            checarFilhos(funcoes,i,j);
+        }
+        
         rowsFuncoes.push([funcoes[i].nome, funcoes[i].numeroLinhas, funcoes[i].numeroVariaveis, 
                    funcoes[i].numeroChamadas, funcoes[i].numeroIf + funcoes[i].numeroFor + funcoes[i].numeroWhile + funcoes[i].numeroDoWhile + funcoes[i].numeroSwitchCase]);
            
@@ -277,14 +495,6 @@ function escreverArquivo(file, linhaFinal, funcoes, numeroVariaveisPrograma) {
                               funcoes[i].numeroVariaveisD, funcoes[i].numeroWhile, funcoes[i].With
                             ]);
 
-        if(funcoes[i].funcaoPai === 1)
-        {
-            numeroLinhasFuncoes = numeroLinhasFuncoes + funcoes[i].numeroLinhas;
-            checarFilhos(funcoes,i,1);
-            checarFilhos(funcoes,i,2);
-            checarFilhos(funcoes,i,3);
-        }
-
         numeroVariaveisFuncoes = numeroVariaveisFuncoes + funcoes[i].numeroVariaveis;
     }
 
@@ -293,10 +503,6 @@ function escreverArquivo(file, linhaFinal, funcoes, numeroVariaveisPrograma) {
 
      var tableE = tableN.table(rowsNosEsprimas);
     infosNosEsprima = "INFORMATION ABOUT EACH FUNCTION AND ESPRIMA NODE\n" + tableE;
-
-    //infos = infos + "Total lines of code of functions in " + file.substr(+4) + " = " + numeroLinhasFuncoes + "\r\n";
-    //infos = infos + "Total of global var in file " + file.substr(+4) + " = " + (numeroVariaveisPrograma - numeroVariaveisFuncoes) + "\r\n";
-   // infos = infos + "---------------------------------------------------------------------\r\n";
 
     fs.writeFile("Relatorio Programa " + file.substr(+4) + ".txt", infosPrograma + infosFuncoes + infosNosEsprima, function(err) {
         if(err) {
