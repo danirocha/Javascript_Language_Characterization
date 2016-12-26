@@ -93,8 +93,6 @@ function getGithubURLs() {
                         i++;
                         getGithubURLs();
                     }
-                    else
-                        console.log("FUUUUUUUUUUUUUUUUUUUUUUUUUUUUUU!");
                     // resolve();
                 }
             });
@@ -142,7 +140,7 @@ function connectGithubDB(query, options) {
 
 // init
 function init() {
-    var query = 'SELECT name FROM packages WHERE github_url IS NULL';
+    var query = 'SELECT DISTINCT name FROM packages';
 
     connectGithubDB(query, options);
 }
