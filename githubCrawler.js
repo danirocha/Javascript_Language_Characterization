@@ -140,7 +140,7 @@ function connectGithubDB(query, options) {
 
 // init
 function init() {
-    var query = 'SELECT DISTINCT name FROM packages';
+    var query = 'SELECT name FROM packages WHERE github_url IS NULL';
 
     connectGithubDB(query, options);
 }
