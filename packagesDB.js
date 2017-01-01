@@ -18,7 +18,8 @@ exports.addPackages = function(values) {
   var insertValues = values,
       inserted;
 
-  return inserted = connection.query('INSERT INTO packages (name,author,stars,version,description,tags) VALUES ?', [insertValues], function (err, results, fields) {
+  // return inserted = connection.query('INSERT INTO packages (name,author,stars,version,description,tags) VALUES ?', [insertValues], function (err, results, fields) {
+  return inserted = connection.query('INSERT INTO packages (name,author,description,version) VALUES ?', [insertValues], function (err, results, fields) {
     if (err) {
       throw err;
       return false;

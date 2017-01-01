@@ -12,7 +12,7 @@ var request = require('request'),
               host     : 'localhost',
               user     : 'tcc_user',
               password : 'tccstorage',
-              database : 'my_db'
+              database : 'base_db' //my_db
             };
 
 function getNextLetter() {
@@ -40,10 +40,10 @@ function getAllSearchResults() {
             var array = [
                 $(this).find(".name").text().replace(/[\u0800-\uFFFF]/g,''), // name
                 $(this).find(".author").text().replace(/[\u0800-\uFFFF]/g,''), // author
-                Number($(this).find(".stars").text()), // stars
-                $(this).find(".version").text().replace(/[\u0800-\uFFFF]/g,''), // version
+                // Number($(this).find(".stars").text()), // stars
                 $(this).find(".description").text().replace(/[\u0800-\uFFFF]/g,''), // description
-                $(this).find(".keywords").text().replace(/\s/g,'').replace(/[\u0800-\uFFFF]/g,'') // tags
+                $(this).find(".version").text().replace(/[\u0800-\uFFFF]/g,'') // version
+                // $(this).find(".keywords").text().replace(/\s/g,'').replace(/[\u0800-\uFFFF]/g,'') // tags
             ];
             packages.push(array);
         });
@@ -62,8 +62,8 @@ function getAllSearchResults() {
 
 // Get total pages number
 function getPageNums() {
-    totalResults = parseInt($('.centered.ruled').text(), 10);
-    totalPages = Math.ceil(totalResults / 20);
+    totalResults = parseInt($('.container h1').text(), 10);
+    totalPages = Math.ceil(totalResults / 10); //20
     console.log(totalResults + " results found, "+totalPages+" page(s) to scave!\n ");
 
     getAllSearchResults();
@@ -85,7 +85,8 @@ function requestPage(pageURL, callback) {
 function init(search) {
     pageCount = 1;
     pageToVisit = "https://www.npmjs.com/search?q=" + search + "&page=";
-    var query = 'CREATE TABLE IF NOT EXISTS packages (ID INT NOT NULL AUTO_INCREMENT,name VARCHAR(255),author VARCHAR(255),stars INT,version VARCHAR(100),description TEXT,tags TEXT,github_url VARCHAR(400), PRIMARY KEY(ID))';
+    // var query = 'CREATE TABLE IF NOT EXISTS packages (ID INT NOT NULL AUTO_INCREMENT,name VARCHAR(255),author VARCHAR(255),stars INT,version VARCHAR(100),description TEXT,tags TEXT,github_url VARCHAR(400), PRIMARY KEY(ID))';
+    var query = 'CREATE TABLE IF NOT EXISTS packages (ID INT NOT NULL AUTO_INCREMENT,name VARCHAR(255),author VARCHAR(255),description TEXT,version VARCHAR(100),github_url VARCHAR(400), PRIMARY KEY(ID))';
 
     console.log("\nsearching page for '" + search + "'...\n ");
 
