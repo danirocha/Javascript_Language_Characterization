@@ -2,12 +2,14 @@ var request = require('request'),
     cheerio = require('cheerio'),
     Jetty = require("jetty"),
     fs = require('fs'),
+    // db = require('./packagesDB.js'),
 
     mysql = require('mysql'),
     connection, i = 0,
 
     jetty = new Jetty(process.stdout),
     $, packagesNames = [],
+    // githubUrls = [],
     options = {
         host: 'localhost',
         user: 'tcc_user',
@@ -17,10 +19,16 @@ var request = require('request'),
     };
 
 function updatePackagesUrls(values) {
+    // var updateValues = values;
+
+    // for (key in updateValues) {
         connection.query('UPDATE packages SET github_url = ? WHERE name = ?', values, function(err, results, fields) {
             if (err)
                 throw err;
         });
+    // }
+    // connection.end();
+    // console.log("All packages github urls' updated!");
 }
 
 function extractGithubUrl(elem, packageName) {
@@ -30,6 +38,21 @@ function extractGithubUrl(elem, packageName) {
     elem.each(function(index) {
         var urlAttr = elem[index].attribs.href;
         githubUrls.push(urlAttr);
+        // console.log(urlAttr);
+        // console.log(urlAttr.indexOf("github"));
+        // console.log(index+"/"+elem.length);
+        // if ((urlAttr.indexOf("github") !== -1) && !matched) {
+        //     matched = true;
+        //     // console.log("YAS!");
+        //     var array = [urlAttr, packageName];
+        //     // githubUrls.push(array);
+        //     updatePackagesUrls(array);
+        //     return;
+        // }
+        // else if(index+1 == elem.length) {
+        //     // jetty.moveTo([4,0]).text(index+1+"/"+elem.length);
+        //     return;
+        // }
     });
 
     for(key; key < githubUrls.length; key++)
@@ -41,6 +64,8 @@ function extractGithubUrl(elem, packageName) {
 
 // get github url
 function getGithubURLs() {
+    // return Promise.all(packagesNames.map(function(item) {
+        // return new Promise(function(resolve, reject) {
         if(i < packagesNames.length) {
             var item = packagesNames[i],
                 url = "https://www.npmjs.com/package/" + item;
@@ -48,6 +73,7 @@ function getGithubURLs() {
             request(url, function(error, response, body) {
                 if (error) {
                     console.log("Error: " + error);
+                    // reject();
                 }
                 // Check status code (200 is HTTP OK)
                 if (response.statusCode === 200) {
@@ -57,17 +83,22 @@ function getGithubURLs() {
 
                     var elem = $('.box li a'),
                         array = extractGithubUrl(elem, item);
+                    // console.log(array);
                     if(array.length !== 0)
                         updatePackagesUrls(array);
                     i++;
                     getGithubURLs();
+                    // resolve();
                 }
             });
         }
         else {
             console.log("\nAll Github Urls collected and updated!");
             connection.end();
+            // updatePackagesUrls(githubUrls);
         }
+        // }.bind(this));
+    // }.bind(this)));
 }
 
 function getPackagesNames(rows) {
@@ -76,7 +107,13 @@ function getPackagesNames(rows) {
     }
 
     console.log("Collected all packages names!");
+    // console.log(packagesNames);
     getGithubURLs();
+        // .then(function() {
+        //     console.log("\nAll Github Urls collected!");
+        //     // writeBatFile(githubUrls);
+        //     updatePackagesUrls(githubUrls);
+        // });
 };
 
 function connectGithubDB(query, options) {
