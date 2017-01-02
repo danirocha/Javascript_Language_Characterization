@@ -2,10 +2,9 @@ var request = require('request'),
     cheerio = require('cheerio'),
     Jetty = require("jetty"),
     fs = require('fs'),
-    db = require('./packagesDB.js'),
 
     mysql = require('mysql'),
-    connection, i = 5300,
+    connection, i = 0,
 
     jetty = new Jetty(process.stdout),
     $, packagesNames = [],
