@@ -7,45 +7,13 @@ var request = require('request'),
     jetty = new Jetty(process.stdout),
     letters = ['a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z'],
     search = letters[0],
-    $, $github, totalResults, pageCount, pageToVisit, totalPages, packages, linePlace = 4
+    $, totalResults, pageCount, pageToVisit, totalPages, packages, linePlace = 4
     options = {
               host     : 'localhost',
               user     : 'tcc_user',
               password : 'tccstorage',
-              database : 'my_db'
+              database : 'base_db' //my_db
             };
-
-// // get github url
-// function getGithubURLs(packages) {
-//     var githubUrls = [];
-//
-//     for(key in packages){
-//         var url = "https://www.npmjs.com/package/"+packages[key][0],
-//         matched = false;
-//
-//         request(url, function(error, response, body) {
-//             if (error)
-//                 console.log("Error: " + error);
-//             // Check status code (200 is HTTP OK)
-//             if (response.statusCode === 200) {
-//                 $github = cheerio.load(body);
-//
-//                 var elem = $github('.box li a');
-//                 elem.each(function(index) {
-//                     var urlAttr = elem[index].attribs.href;
-//                     if ((urlAttr.indexOf("github") !== -1) && !matched) {
-//                         matched = true;
-//                         var array = [urlAttr,packages[key][0]];
-//                         // db.addPackage(array);
-//                         githubUrls.push(array);
-//                         return;
-//                     }
-//                 });
-//             }
-//         });
-//     }
-//     console.log(githubUrls);
-// }
 
 function getNextLetter() {
     var aux = letters.indexOf(search)+1;
@@ -72,16 +40,15 @@ function getAllSearchResults() {
             var array = [
                 $(this).find(".name").text().replace(/[\u0800-\uFFFF]/g,''), // name
                 $(this).find(".author").text().replace(/[\u0800-\uFFFF]/g,''), // author
-                Number($(this).find(".stars").text()), // stars
-                $(this).find(".version").text().replace(/[\u0800-\uFFFF]/g,''), // version
+                // Number($(this).find(".stars").text()), // stars
                 $(this).find(".description").text().replace(/[\u0800-\uFFFF]/g,''), // description
-                $(this).find(".keywords").text().replace(/\s/g,'').replace(/[\u0800-\uFFFF]/g,'') // tags
+                $(this).find(".version").text().replace(/[\u0800-\uFFFF]/g,'') // version
+                // $(this).find(".keywords").text().replace(/\s/g,'').replace(/[\u0800-\uFFFF]/g,'') // tags
             ];
             packages.push(array);
         });
 
         if(db.addPackages(packages)) {
-            // getGithubURLs(packages);
             pageCount++;
             requestPage(pageToVisit, getAllSearchResults);
         }
@@ -95,8 +62,8 @@ function getAllSearchResults() {
 
 // Get total pages number
 function getPageNums() {
-    totalResults = parseInt($('.centered.ruled').text(), 10);
-    totalPages = Math.ceil(totalResults / 20);
+    totalResults = parseInt($('.container h1').text(), 10);
+    totalPages = Math.ceil(totalResults / 10); //20
     console.log(totalResults + " results found, "+totalPages+" page(s) to scave!\n ");
 
     getAllSearchResults();
@@ -118,11 +85,13 @@ function requestPage(pageURL, callback) {
 function init(search) {
     pageCount = 1;
     pageToVisit = "https://www.npmjs.com/search?q=" + search + "&page=";
+    // var query = 'CREATE TABLE IF NOT EXISTS packages (ID INT NOT NULL AUTO_INCREMENT,name VARCHAR(255),author VARCHAR(255),stars INT,version VARCHAR(100),description TEXT,tags TEXT,github_url VARCHAR(400), PRIMARY KEY(ID))';
+    var query = 'CREATE TABLE IF NOT EXISTS packages (ID INT NOT NULL AUTO_INCREMENT,name VARCHAR(255),author VARCHAR(255),description TEXT,version VARCHAR(100),github_url VARCHAR(400), PRIMARY KEY(ID))';
 
     console.log("\nsearching page for '" + search + "'...\n ");
 
     requestPage(pageToVisit, getPageNums);
-    db.connectDB(options);
+    db.connectDB(query, options);
 }
 
 // init
