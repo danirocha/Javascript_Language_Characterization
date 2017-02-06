@@ -50,7 +50,7 @@ function readFiles(dirName, files) {
                 throw err;
 
             var text = logData.toString();
-            
+
             esprimaParse(text, file);
         });
       });
@@ -58,9 +58,10 @@ function readFiles(dirName, files) {
 
 function esprimaParse(text, file) {
     var syntax = esprima.parse(text, {
-        loc: true
+        loc: true,
+        tokens: true
     });
-    
+
     var linhaFinalPrograma = 0;
     var funcoes = [];
     var numeroVariaveisPrograma = 0;
@@ -81,10 +82,110 @@ function esprimaParse(text, file) {
 
     for(var i = 0; i < funcoes.length; i++)
     {
-        linhaFinalFuncao = contaFuncoes(funcoes[i].node,funcoes[i].funcao,linhaFinalFuncao);
+        linhaFinalFuncao = contaFuncoes(funcoes[i].nodeFuncao,funcoes[i].funcao,linhaFinalFuncao);
     };
 
+    calculaOperandos(syntax.tokens, funcoes);
+
     escreverArquivo(file,linhaFinalPrograma,funcoes,numeroVariaveisPrograma);
+}
+
+function calculaOperandos(tokens, funcoes)
+{
+    for(var i = 0; i < funcoes.length; i++) {
+        
+        if(funcoes[i].funcao.funcaoPai === -1)
+        {
+            var tokenInicio = 0;
+            var tokenFim = 0;
+
+            for(var indexToken = 0; indexToken < tokens.length; indexToken++) {
+                if(funcoes[i].nodeInicial.loc.start.line === tokens[indexToken].loc.start.line && funcoes[i].nodeInicial.loc.start.column === tokens[indexToken].loc.start.column) {
+                        tokenInicio = indexToken;
+                }
+
+                else if(funcoes[i].nodeInicial.loc.end.line === tokens[indexToken].loc.end.line && funcoes[i].nodeInicial.loc.end.column === tokens[indexToken].loc.end.column) {
+                        tokenFim = indexToken;
+                }
+            }
+
+            for (var indexToken = tokenInicio; indexToken <= tokenFim; indexToken++) {
+                classificaToken(indexToken, funcoes[i].funcao, tokens);
+            }
+        }
+
+        else {
+            var j = i+1;
+            var count = 0;
+
+            while(j < funcoes.length && funcoes[j].funcao.funcaoPai !== 1)
+            {
+                count++;
+                j++;
+            }
+
+            var pertenceFilho = false;
+
+            for(var indexToken = 0; indexToken < tokens.length; indexToken++) {
+                for(var h = i+1; h <= i+count; h++) {
+                        if(tokens[indexToken].loc.start.line >= funcoes[h].nodeInicial.loc.start.line) {
+                            if(tokens[indexToken].loc.end.line <= funcoes[h].nodeInicial.loc.end.line) {
+                                pertenceFilho = true;
+                            }
+                        }
+                    }
+                
+                if(!pertenceFilho) {
+
+                     if(tokens[indexToken].loc.start.line >= funcoes[i].nodeInicial.loc.start.line) {
+                            if(tokens[indexToken].loc.end.line <= funcoes[i].nodeInicial.loc.end.line) {
+                                 classificaToken(indexToken, funcoes[i].funcao, tokens);
+                            }
+                     }
+                }
+
+                pertenceFilho = false;
+            }
+        }
+    }
+}
+
+function classificaToken(i, funcao, tokens) {
+    
+    var existeToken = false;
+
+    if(tokens[i].type === "Keyword" || tokens[i].type === "Punctuator") {
+        if(tokens[i].value === ")" || tokens[i].value === "}" || tokens[i].value === "," || tokens[i].value === ";" || tokens[i].value === "]")
+            return;
+            
+        for(var j = 0; j < funcao.operadores.length; j++) {
+            if(funcao.operadores[j] === tokens[i].value) {
+                existeToken = true;
+            }
+        }
+
+        if(!existeToken)
+            funcao.operadores.push(tokens[i].value);
+
+        funcao.operadoresTotal++;
+
+        existeToken = false;
+    }
+
+    else if (tokens[i].type === "Identifier" || tokens[i].type === "String" || tokens[i].type === "Numeric") {
+        for(var j = 0; j < funcao.operandos.length; j++) {
+            if(funcao.operandos[j] === tokens[i].value) {
+                existeToken = true;
+            }
+        }
+
+        if(!existeToken)
+            funcao.operandos.push(tokens[i].value);
+
+        funcao.operandosTotal++;
+
+        existeToken = false;            
+    }
 }
 
 function procuraFuncoes(node, funcoes)
@@ -99,13 +200,15 @@ function procuraFuncoes(node, funcoes)
                   Logical: 0, Member: 0, NewExpression: 0, Object: 0, Property: 0,
                   Return: 0, Sequence: 0, Switch: 0, numeroSwitchCase: 0, This: 0,
                   Throw: 0, Try: 0, Unary: 0, Update: 0,
-                  numeroVariaveis: 0, numeroVariaveisD: 0, numeroWhile: 0, With: 0
-                };
+                  numeroVariaveis: 0, numeroVariaveisD: 0, numeroWhile: 0, With: 0,
+                  operandosTotal: 0, operadoresTotal: 0,
+                  operandos: [], operadores: []
+            };
     
-        var objeto = {funcao: funcao, node: node};
+        var objeto = {funcao: funcao, nodeFuncao: node, nodeInicial: node};
 
         objeto.funcao.nome = node.id.name;
-        objeto.node = node;
+        objeto.nodeFuncao = node;
         funcoes.push(objeto);
     }
 
@@ -120,10 +223,12 @@ function procuraFuncoes(node, funcoes)
                   Logical: 0, Member: 0, NewExpression: 0, Object: 0, Property: 0,
                   Return: 0, Sequence: 0, Switch: 0, numeroSwitchCase: 0, This: 0,
                   Throw: 0, Try: 0, Unary: 0, Update: 0,
-                  numeroVariaveis: 0, numeroVariaveisD: 0, numeroWhile: 0, With: 0
+                  numeroVariaveis: 0, numeroVariaveisD: 0, numeroWhile: 0, With: 0, 
+                  operandosTotal: 0, operadoresTotal: 0,
+                  operandos: [], operadores: []
                 };
     
-        var objeto = {funcao: funcao, node: node};
+        var objeto = {funcao: funcao, nodeFuncao: node, nodeInicial: node};
 
         if(node.expression.left && node.expression.right)
         {
@@ -132,7 +237,7 @@ function procuraFuncoes(node, funcoes)
                 if(node.expression.right.type === 'FunctionExpression')
                 {
                     objeto.funcao.nome = node.expression.left.object.name + "." + node.expression.left.property.name;
-                    objeto.node = node.expression.right;
+                    objeto.nodeFuncao = node.expression.right;
                     funcoes.push(objeto);
                 }
             }
@@ -142,7 +247,7 @@ function procuraFuncoes(node, funcoes)
                 if(node.expression.right.type === 'FunctionExpression')
                 {
                     objeto.funcao.nome = node.expression.left.name;
-                    objeto.funcao.node = node.expression.right;
+                    objeto.nodeFuncao = node.expression.right;
                     funcoes.push(objeto);
                 }
             }
@@ -159,99 +264,107 @@ function procuraFuncoes(node, funcoes)
                 {
                     if(node.declarations[i].init.type === 'FunctionExpression')
                     {
-                        var funcao = {nome: '', numeroLinhas: 0, funcaoPai: -1, 
-                                      numeroAssignment: 0, Array: 0, Block: 0, Binary:0, Break: 0, 
-                                      numeroChamadas: 0, Catch: 0, Conditional: 0, Continue: 0, numeroDoWhile: 0,
-                                      Debugger: 0, Empty: 0, Expression: 0, numeroFor: 0, ForIn: 0,
-                                      numeroFunctionD: 0, FunctionE: 0, Identifier: 0, numeroIf: 0, Literal: 0, Label: 0,
-                                      Logical: 0, Member: 0, NewExpression: 0, Object: 0, Property: 0,
-                                      Return: 0, Sequence: 0, Switch: 0, numeroSwitchCase: 0, This: 0,
-                                      Throw: 0, Try: 0, Unary: 0, Update: 0,
-                                      numeroVariaveis: 0, numeroVariaveisD: 0, numeroWhile: 0, With: 0
+                         var funcao = {nome: '', numeroLinhas: 0, funcaoPai: -1, 
+                                       numeroAssignment: 0, Array: 0, Block: 0, Binary:0, Break: 0, 
+                                       numeroChamadas: 0, Catch: 0, Conditional: 0, Continue: 0, numeroDoWhile: 0,
+                                       Debugger: 0, Empty: 0, Expression: 0, numeroFor: 0, ForIn: 0,
+                                       numeroFunctionD: 0, FunctionE: 0, Identifier: 0, numeroIf: 0, Literal: 0, Label: 0,
+                                       Logical: 0, Member: 0, NewExpression: 0, Object: 0, Property: 0,
+                                       Return: 0, Sequence: 0, Switch: 0, numeroSwitchCase: 0, This: 0,
+                                       Throw: 0, Try: 0, Unary: 0, Update: 0,
+                                       numeroVariaveis: 0, numeroVariaveisD: 0, numeroWhile: 0, With: 0, 
+                                       operadosTotal: 0, operadoresTotal: 0,
+                                       operandos: [], operadores: []
                                     };
     
-                        var objeto = {funcao: funcao, node: node};
+                        var objeto = {funcao: funcao, nodeFuncao: node, nodeInicial: node};
 
                         if(node.declarations[i].init.id === null)
                         {
                             objeto.funcao.nome = node.declarations[i].id.name;
-                            objeto.node = node.declarations[i].init;
+                            objeto.nodeFuncao = node.declarations[i].init;
                             funcoes.push(objeto);
                         }
 
                         else
                         {
                             objeto.funcao.nome = node.declarations[i].init.id.name;
-                            objeto.node = node.declarations[i].init;
+                            objeto.nodeFuncao = node.declarations[i].init;
                             funcoes.push(objeto);
                         }
                     }
 
                     else if(node.declarations[i].init.type === 'CallExpression')
                     {
-                        var funcao = {nome: '', numeroLinhas: 0, funcaoPai: -1, 
-                                      numeroAssignment: 0, Array: 0, Block: 0, Binary:0, Break: 0, 
-                                      numeroChamadas: 0, Catch: 0, Conditional: 0, Continue: 0, numeroDoWhile: 0,
-                                      Debugger: 0, Empty: 0, Expression: 0, numeroFor: 0, ForIn: 0,
-                                      numeroFunctionD: 0, FunctionE: 0, Identifier: 0, numeroIf: 0, Literal: 0, Label: 0,
-                                      Logical: 0, Member: 0, NewExpression: 0, Object: 0, Property: 0,
-                                      Return: 0, Sequence: 0, Switch: 0, numeroSwitchCase: 0, This: 0,
-                                      Throw: 0, Try: 0, Unary: 0, Update: 0,
-                                      numeroVariaveis: 0, numeroVariaveisD: 0, numeroWhile: 0, With: 0
-                                    };
+                         var funcao = {nome: '', numeroLinhas: 0, funcaoPai: -1, 
+                                        numeroAssignment: 0, Array: 0, Block: 0, Binary:0, Break: 0, 
+                                        numeroChamadas: 0, Catch: 0, Conditional: 0, Continue: 0, numeroDoWhile: 0,
+                                        Debugger: 0, Empty: 0, Expression: 0, numeroFor: 0, ForIn: 0,
+                                        numeroFunctionD: 0, FunctionE: 0, Identifier: 0, numeroIf: 0, Literal: 0, Label: 0,
+                                        Logical: 0, Member: 0, NewExpression: 0, Object: 0, Property: 0,
+                                        Return: 0, Sequence: 0, Switch: 0, numeroSwitchCase: 0, This: 0,
+                                        Throw: 0, Try: 0, Unary: 0, Update: 0,
+                                        numeroVariaveis: 0, numeroVariaveisD: 0, numeroWhile: 0, With: 0, 
+                                        operadosTotal: 0, operadoresTotal: 0,
+                                        operandos: [], operadores: []
+                                        };
     
-                        var objeto = {funcao: funcao, node: node};
+                        var objeto = {funcao: funcao, nodeFuncao: node, nodeInicial: node};
 
                         if(node.declarations[i].init.callee.type === 'FunctionExpression')
                         {
                             objeto.funcao.nome = node.declarations[i].id.name;
-                            objeto.node = node.declarations[i].init.callee;
+                            objeto.nodeFuncao = node.declarations[i].init.callee;
                             funcoes.push(objeto);
                         }                  
                     }
 
                     else if(node.declarations[i].init.type === 'NewExpression')
                     {
-                        var funcao = {nome: '', numeroLinhas: 0, funcaoPai: -1, 
-                                      numeroAssignment: 0, Array: 0, Block: 0, Binary:0, Break: 0, 
-                                      numeroChamadas: 0, Catch: 0, Conditional: 0, Continue: 0, numeroDoWhile: 0,
-                                      Debugger: 0, Empty: 0, Expression: 0, numeroFor: 0, ForIn: 0,
-                                      numeroFunctionD: 0, FunctionE: 0, Identifier: 0, numeroIf: 0, Literal: 0, Label: 0,
-                                      Logical: 0, Member: 0, NewExpression: 0, Object: 0, Property: 0,
-                                      Return: 0, Sequence: 0, Switch: 0, numeroSwitchCase: 0, This: 0,
-                                      Throw: 0, Try: 0, Unary: 0, Update: 0,
-                                      numeroVariaveis: 0, numeroVariaveisD: 0, numeroWhile: 0, With: 0
-                                    };
+                         var funcao = {nome: '', numeroLinhas: 0, funcaoPai: -1, 
+                                        numeroAssignment: 0, Array: 0, Block: 0, Binary:0, Break: 0, 
+                                        numeroChamadas: 0, Catch: 0, Conditional: 0, Continue: 0, numeroDoWhile: 0,
+                                        Debugger: 0, Empty: 0, Expression: 0, numeroFor: 0, ForIn: 0,
+                                        numeroFunctionD: 0, FunctionE: 0, Identifier: 0, numeroIf: 0, Literal: 0, Label: 0,
+                                        Logical: 0, Member: 0, NewExpression: 0, Object: 0, Property: 0,
+                                        Return: 0, Sequence: 0, Switch: 0, numeroSwitchCase: 0, This: 0,
+                                        Throw: 0, Try: 0, Unary: 0, Update: 0,
+                                        numeroVariaveis: 0, numeroVariaveisD: 0, numeroWhile: 0, With: 0, 
+                                        operadosTotal: 0, operadoresTotal: 0,
+                                        operandos: [], operadores: []
+                                      };
     
-                        var objeto = {funcao: funcao, node: node};
+                        var objeto = {funcao: funcao, nodeFuncao: node, nodeInicial: node};
 
                         if(node.declarations[i].init.callee.type === 'FunctionExpression')
                         {
                             objeto.funcao.nome = node.declarations[i].id.name;
-                            objeto.node = node.declarations[i].init.callee;
+                            objeto.nodeFuncao = node.declarations[i].init.callee;
                             funcoes.push(objeto);
                         }    
                     }
 
                     else if(node.declarations[i].init.type === 'ArrowFunctionExpression')
                     {
-                        var funcao = {nome: '', numeroLinhas: 0, funcaoPai: -1, 
-                                      numeroAssignment: 0, Array: 0, Block: 0, Binary:0, Break: 0, 
-                                      numeroChamadas: 0, Catch: 0, Conditional: 0, Continue: 0, numeroDoWhile: 0,
-                                      Debugger: 0, Empty: 0, Expression: 0, numeroFor: 0, ForIn: 0,
-                                      numeroFunctionD: 0, FunctionE: 0, Identifier: 0, numeroIf: 0, Literal: 0, Label: 0,
-                                      Logical: 0, Member: 0, NewExpression: 0, Object: 0, Property: 0,
-                                      Return: 0, Sequence: 0, Switch: 0, numeroSwitchCase: 0, This: 0,
-                                      Throw: 0, Try: 0, Unary: 0, Update: 0,
-                                      numeroVariaveis: 0, numeroVariaveisD: 0, numeroWhile: 0, With: 0
-                                    };
+                         var funcao = {nome: '', numeroLinhas: 0, funcaoPai: -1, 
+                                        numeroAssignment: 0, Array: 0, Block: 0, Binary:0, Break: 0, 
+                                        numeroChamadas: 0, Catch: 0, Conditional: 0, Continue: 0, numeroDoWhile: 0,
+                                        Debugger: 0, Empty: 0, Expression: 0, numeroFor: 0, ForIn: 0,
+                                        numeroFunctionD: 0, FunctionE: 0, Identifier: 0, numeroIf: 0, Literal: 0, Label: 0,
+                                        Logical: 0, Member: 0, NewExpression: 0, Object: 0, Property: 0,
+                                        Return: 0, Sequence: 0, Switch: 0, numeroSwitchCase: 0, This: 0,
+                                        Throw: 0, Try: 0, Unary: 0, Update: 0,
+                                        numeroVariaveis: 0, numeroVariaveisD: 0, numeroWhile: 0, With: 0, 
+                                        operadosTotal: 0, operadoresTotal: 0,
+                                        operandos: [], operadores: []
+                                       };
     
-                        var objeto = {funcao: funcao, node: node};
+                        var objeto = {funcao: funcao, nodeFuncao: node, nodeInicial: node};
 
                         if(node.declarations[i].init.callee.type === 'FunctionExpression')
                         {
                             objeto.funcao.nome = node.declarations[i].id.name;
-                            objeto.node = node.declarations[i].init.callee;
+                            objeto.nodeFuncao = node.declarations[i].init.callee;
                             funcoes.push(objeto);
                         } 
                     }
@@ -276,13 +389,13 @@ function contaFuncoes(node,funcao,linhaFinalFuncao) {
     {
         linhaFinal = node.loc.end.line;
 
-        funcao.numeroLinhas = (node.loc.end.line - node.loc.start.line);
-
+        funcao.numeroLinhas = (node.loc.end.line - node.loc.start.line) + 1;
+        
         if(linhaFinal > linhaFinalFuncao)
         {
-            funcao.funcaoPai = 1;
-            linhaFinalFuncao = node.loc.end.line;
-        }
+           funcao.funcaoPai = 1;
+           linhaFinalFuncao = node.loc.end.line;
+       }
 
         estraverse.traverse(node, {
             enter: function(node) {
@@ -387,217 +500,217 @@ function checarFilhos(funcoes,i,escolha) {
 
         else if(escolha === 3)
         {
-            funcoes[i].funcao.Binary = funcoes[i].funcao.Binary + funcoes[i+count].funcao.Binary;
+            funcoes[i].funcao.Binary = funcoes[i].funcao.Binary - funcoes[i+count].funcao.Binary;
             count--;
         }
 
         else if(escolha === 4)
         {
-            funcoes[i].funcao.Break = funcoes[i].funcao.Break + funcoes[i+count].funcao.Break;
+            funcoes[i].funcao.Break = funcoes[i].funcao.Break - funcoes[i+count].funcao.Break;
             count--;
         }
 
         else if(escolha === 5)
         {
-            funcoes[i].funcao.numeroChamadas = funcoes[i].funcao.numeroChamadas + funcoes[i+count].funcao.numeroChamadas;
+            funcoes[i].funcao.numeroChamadas = funcoes[i].funcao.numeroChamadas - funcoes[i+count].funcao.numeroChamadas;
             count--;
         }
 
         else if(escolha === 6)
         {
-            funcoes[i].funcao.Catch = funcoes[i].funcao.Catch + funcoes[i+count].funcao.Catch;
+            funcoes[i].funcao.Catch = funcoes[i].funcao.Catch - funcoes[i+count].funcao.Catch;
             count--;
         }
 
         else if(escolha === 7)
         {
-            funcoes[i].funcao.Conditional = funcoes[i].funcao.Conditional + funcoes[i+count].funcao.Conditional;
+            funcoes[i].funcao.Conditional = funcoes[i].funcao.Conditional - funcoes[i+count].funcao.Conditional;
             count--;
         }
 
         else if(escolha === 8)
         {
-            funcoes[i].funcao.Continue = funcoes[i].funcao.Continue + funcoes[i+count].funcao.Continue;
+            funcoes[i].funcao.Continue = funcoes[i].funcao.Continue - funcoes[i+count].funcao.Continue;
             count--;
         }
 
         else if(escolha === 9)
         {
-            funcoes[i].funcao.numeroDoWhile = funcoes[i].funcao.numeroDoWhile + funcoes[i+count].funcao.numeroDoWhile;
+            funcoes[i].funcao.numeroDoWhile = funcoes[i].funcao.numeroDoWhile - funcoes[i+count].funcao.numeroDoWhile;
             count--;
         }
 
         else if(escolha === 10)
         {
-            funcoes[i].funcao.Debugger = funcoes[i].funcao.Debugger + funcoes[i+count].funcao.Debugger;
+            funcoes[i].funcao.Debugger = funcoes[i].funcao.Debugger - funcoes[i+count].funcao.Debugger;
             count--;
         }
 
         else if(escolha === 11)
         {
-            funcoes[i].funcao.Empty = funcoes[i].funcao.Empty + funcoes[i+count].funcao.Empty;
+            funcoes[i].funcao.Empty = funcoes[i].funcao.Empty - funcoes[i+count].funcao.Empty;
             count--;
         }
 
         else if(escolha === 12)
         {
-            funcoes[i].funcao.Expression = funcoes[i].funcao.Expression + funcoes[i+count].funcao.Expression;
+            funcoes[i].funcao.Expression = funcoes[i].funcao.Expression - funcoes[i+count].funcao.Expression;
             count--;
         }
 
         else if(escolha === 13)
         {
-            funcoes[i].funcao.numeroFor = funcoes[i].funcao.numeroFor + funcoes[i+count].funcao.numeroFor;
+            funcoes[i].funcao.numeroFor = funcoes[i].funcao.numeroFor - funcoes[i+count].funcao.numeroFor;
             count--;
         }
 
         else if(escolha === 14)
         {
-            funcoes[i].funcao.ForIn = funcoes[i].funcao.ForIn + funcoes[i+count].funcao.ForIn;
+            funcoes[i].funcao.ForIn = funcoes[i].funcao.ForIn - funcoes[i+count].funcao.ForIn;
             count--;
         }
 
         else if(escolha === 15)
         {
-            funcoes[i].funcao.numeroFunctionD = funcoes[i].funcao.numeroFunctionD + funcoes[i+count].funcao.numeroFunctionD;
+            funcoes[i].funcao.numeroFunctionD = funcoes[i].funcao.numeroFunctionD - funcoes[i+count].funcao.numeroFunctionD;
             count--;
         }
 
         else if(escolha === 16)
         {
-            funcoes[i].funcao.FunctionE = funcoes[i].funcao.FunctionE + funcoes[i+count].funcao.FunctionE;
+            funcoes[i].funcao.FunctionE = funcoes[i].funcao.FunctionE - funcoes[i+count].funcao.FunctionE;
             count--;
         }
 
         else if(escolha === 17)
         {
-            funcoes[i].funcao.Identifier = funcoes[i].funcao.Identifier + funcoes[i+count].funcao.Identifier;
+            funcoes[i].funcao.Identifier = funcoes[i].funcao.Identifier - funcoes[i+count].funcao.Identifier;
             count--;
         }
 
         else if(escolha === 18)
         {
-            funcoes[i].funcao.numeroIf = funcoes[i].funcao.numeroIf + funcoes[i+count].funcao.numeroIf;
+            funcoes[i].funcao.numeroIf = funcoes[i].funcao.numeroIf - funcoes[i+count].funcao.numeroIf;
             count--;
         }
 
         else if(escolha === 19)
         {
-            funcoes[i].funcao.Literal = funcoes[i].funcao.Literal + funcoes[i+count].funcao.Literal;
+            funcoes[i].funcao.Literal = funcoes[i].funcao.Literal - funcoes[i+count].funcao.Literal;
             count--;
         }
 
         else if(escolha === 20)
         {
-            funcoes[i].funcao.Label = funcoes[i].funcao.Label + funcoes[i+count].funcao.Label;
+            funcoes[i].funcao.Label = funcoes[i].funcao.Label - funcoes[i+count].funcao.Label;
             count--;
         }
 
         else if(escolha === 21)
         {
-            funcoes[i].funcao.Logical = funcoes[i].funcao.Logical + funcoes[i+count].funcao.Logical;
+            funcoes[i].funcao.Logical = funcoes[i].funcao.Logical - funcoes[i+count].funcao.Logical;
             count--;
         }
 
         else if(escolha === 22)
         {
-            funcoes[i].funcao.Member = funcoes[i].funcao.Member + funcoes[i+count].funcao.Member;
+            funcoes[i].funcao.Member = funcoes[i].funcao.Member - funcoes[i+count].funcao.Member;
             count--;
         }
 
         else if(escolha === 23)
         {
-            funcoes[i].funcao.NewExpression = funcoes[i].funcao.NewExpression + funcoes[i+count].funcao.NewExpression;
+            funcoes[i].funcao.NewExpression = funcoes[i].funcao.NewExpression - funcoes[i+count].funcao.NewExpression;
             count--;
         }
 
         else if(escolha === 24)
         {
-            funcoes[i].funcao.Object = funcoes[i].funcao.Object + funcoes[i+count].funcao.Object;
+            funcoes[i].funcao.Object = funcoes[i].funcao.Object - funcoes[i+count].funcao.Object;
             count--;
         }
 
         else if(escolha === 25)
         {
-            funcoes[i].funcao.Property = funcoes[i].funcao.Property + funcoes[i+count].funcao.Property;
+            funcoes[i].funcao.Property = funcoes[i].funcao.Property - funcoes[i+count].funcao.Property;
             count--;
         }
 
         else if(escolha === 26)
         {
-            funcoes[i].funcao.Return = funcoes[i].funcao.Return + funcoes[i+count].funcao.Return;
+            funcoes[i].funcao.Return = funcoes[i].funcao.Return - funcoes[i+count].funcao.Return;
             count--;
         }
 
         else if(escolha === 27)
         {
-            funcoes[i].funcao.Sequence = funcoes[i].funcao.Sequence + funcoes[i+count].funcao.Sequence;
+            funcoes[i].funcao.Sequence = funcoes[i].funcao.Sequence - funcoes[i+count].funcao.Sequence;
             count--;
         }
 
         else if(escolha === 28)
         {
-            funcoes[i].funcao.Switch = funcoes[i].funcao.Switch + funcoes[i+count].funcao.Switch;
+            funcoes[i].funcao.Switch = funcoes[i].funcao.Switch - funcoes[i+count].funcao.Switch;
             count--;
         }
 
         else if(escolha === 29)
         {
-            funcoes[i].funcao.numeroSwitchCase = funcoes[i].funcao.numeroSwitchCase + funcoes[i+count].funcao.numeroSwitchCase;
+            funcoes[i].funcao.numeroSwitchCase = funcoes[i].funcao.numeroSwitchCase - funcoes[i+count].funcao.numeroSwitchCase;
             count--;
         }
 
         else if(escolha === 30)
         {
-            funcoes[i].funcao.This = funcoes[i].funcao.This + funcoes[i+count].funcao.This;
+            funcoes[i].funcao.This = funcoes[i].funcao.This - funcoes[i+count].funcao.This;
             count--;
         }
 
         else if(escolha === 31)
         {
-            funcoes[i].funcao.Throw = funcoes[i].funcao.Throw + funcoes[i+count].funcao.Throw;
+            funcoes[i].funcao.Throw = funcoes[i].funcao.Throw - funcoes[i+count].funcao.Throw;
             count--;
         }
 
         else if(escolha === 32)
         {
-            funcoes[i].funcao.Try = funcoes[i].funcao.Try + funcoes[i+count].funcao.Try;
+            funcoes[i].funcao.Try = funcoes[i].funcao.Try - funcoes[i+count].funcao.Try;
             count--;
         }
 
         else if(escolha === 33)
         {
-            funcoes[i].funcao.Unary = funcoes[i].funcao.Unary + funcoes[i+count].funcao.Unary;
+            funcoes[i].funcao.Unary = funcoes[i].funcao.Unary - funcoes[i+count].funcao.Unary;
             count--;
         }
 
         else if(escolha === 34)
         {
-            funcoes[i].funcao.Update = funcoes[i].funcao.Update + funcoes[i+count].funcao.Update;
+            funcoes[i].funcao.Update = funcoes[i].funcao.Update - funcoes[i+count].funcao.Update;
             count--;
         }
 
         else if(escolha === 35)
         {
-            funcoes[i].funcao.numeroVariaveis = funcoes[i].funcao.numeroVariaveis + funcoes[i+count].funcao.numeroVariaveis;
+            funcoes[i].funcao.numeroVariaveis = funcoes[i].funcao.numeroVariaveis - funcoes[i+count].funcao.numeroVariaveis;
             count--;
         }
 
         else if(escolha === 36)
         {
-            funcoes[i].funcao.numeroVariaveisD = funcoes[i].funcao.numeroVariaveisD + funcoes[i+count].funcao.numeroVariaveisD;
+            funcoes[i].funcao.numeroVariaveisD = funcoes[i].funcao.numeroVariaveisD - funcoes[i+count].funcao.numeroVariaveisD;
             count--;
         }
 
         else if(escolha === 37)
         {
-            funcoes[i].funcao.numeroWhile = funcoes[i].funcao.numeroWhile + funcoes[i+count].funcao.numeroWhile;
+            funcoes[i].funcao.numeroWhile = funcoes[i].funcao.numeroWhile - funcoes[i+count].funcao.numeroWhile;
             count--;
         }
 
-         else if(escolha === 38)
+        else if(escolha === 38)
         {
-            funcoes[i].funcao.With = funcoes[i].funcao.With + funcoes[i+count].funcao.With;
+            funcoes[i].funcao.With = funcoes[i].funcao.With - funcoes[i+count].funcao.With;
             count--;
         }
     }
@@ -624,7 +737,7 @@ function escreverArquivo(file, linhaFinal, funcoes, numeroVariaveisPrograma, som
                   + "   Total of var in file " + file.substr(+4) + " = " + numeroVariaveisPrograma + "\n"
                   + "---------------------------------------------------------------------\n";
 
-    var rowsFuncoes = [['nome', 'LOC', 'variaveis', 'chamada de funcoes', 'complexidade ciclomatica  (if, for, while, do...While, switch cases)']];
+    var rowsFuncoes = [['nome', 'LOC', 'variaveis', 'chamada de funcoes', 'complexidade ciclomatica  (if, for, while, do...While, switch cases)', 'Volume Halstead', 'MI']];
 
     var rowsNosEsprimas = [['nome','AssignmentExpression', 'ArrayExpression', 'BlockStatement', 'BinaryExpression' ,'BreakStatement',
                             'CallExpression', 'CatchClause', 'ConditionalExpression', 'ContinueStatement', 'DoWhileStatement',
@@ -643,8 +756,12 @@ function escreverArquivo(file, linhaFinal, funcoes, numeroVariaveisPrograma, som
             checarFilhos(funcoes,i,j);
         }
         
-        rowsFuncoes.push([funcoes[i].funcao.nome, funcoes[i].funcao.numeroLinhas, funcoes[i].funcao.numeroVariaveis, 
-                   funcoes[i].funcao.numeroChamadas, funcoes[i].funcao.numeroIf + funcoes[i].funcao.numeroFor + funcoes[i].funcao.numeroWhile + funcoes[i].funcao.numeroDoWhile + funcoes[i].funcao.numeroSwitchCase]);
+        var volume = (funcoes[i].funcao.operandosTotal + funcoes[i].funcao.operadoresTotal ) * Math.log2(funcoes[i].funcao.operadores.length + funcoes[i].funcao.operandos.length);
+        var complexidadeCiclomatica = funcoes[i].funcao.numeroIf + funcoes[i].funcao.numeroFor + funcoes[i].funcao.numeroWhile + funcoes[i].funcao.numeroDoWhile + funcoes[i].funcao.numeroSwitchCase + 1;
+        var maintainability = Math.max(0, ((171 - (5.2 * Math.log(volume)) - (0.23 * (complexidadeCiclomatica)) - (16.2 * Math.log(funcoes[i].funcao.numeroLinhas)))*100) / 171);
+
+        rowsFuncoes.push([funcoes[i].funcao.nome, funcoes[i].funcao.numeroLinhas, funcoes[i].funcao.numeroVariaveisD, 
+                   funcoes[i].funcao.numeroChamadas, complexidadeCiclomatica, "(" + funcoes[i].funcao.operandosTotal + "+" + funcoes[i].funcao.operadoresTotal + ") * log2" + "(" + funcoes[i].funcao.operandos.length + "+" + funcoes[i].funcao.operadores.length + ") = " + volume, maintainability]);
            
         rowsNosEsprimas.push([funcoes[i].funcao.nome, funcoes[i].funcao.numeroAssignment, funcoes[i].funcao.Array, funcoes[i].funcao.Block, funcoes[i].funcao.Binary, funcoes[i].funcao.Break, 
                               funcoes[i].funcao.numeroChamadas, funcoes[i].funcao.Catch, funcoes[i].funcao.Conditional, funcoes[i].funcao.Continue, funcoes[i].funcao.numeroDoWhile,
