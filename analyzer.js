@@ -88,6 +88,8 @@ function esprimaParse(text, file) {
     calculaOperandos(syntax.tokens, funcoes);
 
     escreverArquivo(file,linhaFinalPrograma,funcoes,numeroVariaveisPrograma);
+
+    escreveArquivoR(file, linhaFinalPrograma, funcoes, numeroVariaveisPrograma);
 }
 
 function calculaOperandos(tokens, funcoes)
@@ -786,7 +788,78 @@ function escreverArquivo(file, linhaFinal, funcoes, numeroVariaveisPrograma, som
         if(err) {
             return console.log(err);
         }
+    });
+}
+
+ function escreveArquivoR(file, linhaFinalPrograma, funcoes, numeroVariaveisPrograma) {
+        
+        var infosPrograma = "";
+
+        infosPrograma = file.substr(+4).replace(".js", "") + "Programa;loc;" + linhaFinalPrograma + "\n" +
+                        file.substr(+4).replace(".js", "") + "Programa;var;" + funcoes.length + "\n" +
+                        file.substr(+4).replace(".js", "") + "Programa;func;" + numeroVariaveisPrograma + "\n";
+
+        var infosFuncoes = "";
+        var infosEsprima = "";
+
+        for(var i = 0; i < funcoes.length; i++) {
+             var volume = (funcoes[i].funcao.operandosTotal + funcoes[i].funcao.operadoresTotal ) * Math.log2(funcoes[i].funcao.operadores.length + funcoes[i].funcao.operandos.length);
+             var complexidadeCiclomatica = funcoes[i].funcao.numeroIf + funcoes[i].funcao.numeroFor + funcoes[i].funcao.numeroWhile + funcoes[i].funcao.numeroDoWhile + funcoes[i].funcao.numeroSwitchCase + 1;
+             var maintainability = Math.max(0, ((171 - (5.2 * Math.log(volume)) - (0.23 * (complexidadeCiclomatica)) - (16.2 * Math.log(funcoes[i].funcao.numeroLinhas)))*100) / 171);
+            
+            infosFuncoes = infosFuncoes + funcoes[i].funcao.nome + ";loc;" + funcoes[i].funcao.numeroLinhas + "\n" +
+                                          funcoes[i].funcao.nome + ";var;" + funcoes[i].funcao.numeroVariaveisD + "\n" +
+                                          funcoes[i].funcao.nome + ";func;" + funcoes[i].funcao.numeroChamadas + "\n" +
+                                          funcoes[i].funcao.nome + ";cc;" + complexidadeCiclomatica + "\n" +
+                                          funcoes[i].funcao.nome + ";halstead;" + volume + "\n" +
+                                          funcoes[i].funcao.nome + ";mi;" + maintainability + "\n";
+            
+            infosEsprima = infosEsprima + funcoes[i].funcao.nome + ";AssignmentExpression;" + funcoes[i].funcao.numeroAssignment + "\n" +
+                                          funcoes[i].funcao.nome + ";ArrayExpression;" + funcoes[i].funcao.Array + "\n" +
+                                          funcoes[i].funcao.nome + ";BlockStatement;" + funcoes[i].funcao.Block + "\n" +
+                                          funcoes[i].funcao.nome + ";BinaryExpression;" + funcoes[i].funcao.Binary + "\n" +
+                                          funcoes[i].funcao.nome + ";BreakStatement;" + funcoes[i].funcao.Break + "\n" +
+                                          funcoes[i].funcao.nome + ";CallExpression;" + funcoes[i].funcao.numeroChamadas + "\n" +
+                                          funcoes[i].funcao.nome + ";CatchClause;" + funcoes[i].funcao.Catch + "\n" +
+                                          funcoes[i].funcao.nome + ";ConditionalExpression;" + funcoes[i].funcao.Conditional + "\n" +
+                                          funcoes[i].funcao.nome + ";ContinueStatement;" + funcoes[i].funcao.Continue + "\n" +
+                                          funcoes[i].funcao.nome + ";DoWhileStatement;" + funcoes[i].funcao.numeroDoWhile + "\n" +
+                                          funcoes[i].funcao.nome + ";DebuggerStatement;" + funcoes[i].funcao.Debugger + "\n" +
+                                          funcoes[i].funcao.nome + ";EmptyStatement;" + funcoes[i].funcao.Empty + "\n" +
+                                          funcoes[i].funcao.nome + ";ExpressionStatement;" + funcoes[i].funcao.Expression + "\n" +
+                                          funcoes[i].funcao.nome + ";ForStatement;" + funcoes[i].funcao.numeroFor + "\n" +
+                                          funcoes[i].funcao.nome + ";ForInStatement;" + funcoes[i].funcao.ForIn + "\n" +
+                                          funcoes[i].funcao.nome + ";FunctionDeclaration;" + funcoes[i].funcao.numeroFunctionD + "\n" +
+                                          funcoes[i].funcao.nome + ";FunctionExpression;" + funcoes[i].funcao.FunctionE + "\n" +
+                                          funcoes[i].funcao.nome + ";Identifier;" + funcoes[i].funcao.Identifier + "\n" +
+                                          funcoes[i].funcao.nome + ";IfStatement;" + funcoes[i].funcao.numeroIf + "\n" +
+                                          funcoes[i].funcao.nome + ";Literal;" + funcoes[i].funcao.Literal + "\n" +
+                                          funcoes[i].funcao.nome + ";LabeledStatement;" + funcoes[i].funcao.Label + "\n" +
+                                          funcoes[i].funcao.nome + ";LogicalExpression;" + funcoes[i].funcao.Logical + "\n" +
+                                          funcoes[i].funcao.nome + ";MemberExpression;" + funcoes[i].funcao.Member + "\n" +
+                                          funcoes[i].funcao.nome + ";NewExpression;" + funcoes[i].funcao.NewExpression + "\n" +
+                                          funcoes[i].funcao.nome + ";ObjectExpression;" + funcoes[i].funcao.Object + "\n" +
+                                          funcoes[i].funcao.nome + ";Property;" + funcoes[i].funcao.Property + "\n" +
+                                          funcoes[i].funcao.nome + ";ReturnStatement;" + funcoes[i].funcao.Return + "\n" +
+                                          funcoes[i].funcao.nome + ";SequenceExpression;" + funcoes[i].funcao.Sequence + "\n" +
+                                          funcoes[i].funcao.nome + ";SwitchStatement;" + funcoes[i].funcao.Switch + "\n" +
+                                          funcoes[i].funcao.nome + ";SwitchCase;" + funcoes[i].funcao.numeroSwitchCase + "\n" +
+                                          funcoes[i].funcao.nome + ";ThisExpression;" + funcoes[i].funcao.This + "\n" +
+                                          funcoes[i].funcao.nome + ";ThrowStatement;" + funcoes[i].funcao.Throw + "\n" +
+                                          funcoes[i].funcao.nome + ";TryStatement;" + funcoes[i].funcao.Try + "\n" +
+                                          funcoes[i].funcao.nome + ";UnaryExpression;" + funcoes[i].funcao.Unary + "\n" +
+                                          funcoes[i].funcao.nome + ";UpdateExpression;" + funcoes[i].funcao.Update + "\n" +
+                                          funcoes[i].funcao.nome + ";VariableDeclaration;" + funcoes[i].funcao.numeroVariaveis + "\n" +
+                                          funcoes[i].funcao.nome + ";VariableDeclarator;" + funcoes[i].funcao.numeroVariaveisD + "\n" +
+                                          funcoes[i].funcao.nome + ";WhileStatement;" + funcoes[i].funcao.numeroWhile + "\n" +
+                                          funcoes[i].funcao.nome + ";WithStatement;" + funcoes[i].funcao.With + "\n";
+        }
+
+        fs.writeFile("Arquivo R - Programa " + file.substr(+4) + ".txt", infosPrograma + infosFuncoes + infosEsprima, function(err) {
+        if(err) {
+            return console.log(err);
+        }
 
         console.log("The analyze for " + file.substr(+4) + " was saved!");
-    }); 
+    });
 }
