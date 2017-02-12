@@ -254,6 +254,18 @@ function procuraFuncoes(node, funcoes)
                 }
             }
         }
+
+         else if(node.expression.callee) {
+            if(node.expression.callee.type === 'FunctionExpression') {
+                if(node.expression.callee.id !== null) 
+                    objeto.funcao.nome = node.node.expression.callee.id;
+                else
+                    objeto.funcao.nome = "Função anônima";
+                
+                objeto.nodeFuncao = node.expression.callee;
+                funcoes.push(objeto);
+            }
+         }
     }
 
     else if(node.type === 'VariableDeclaration')
@@ -759,7 +771,7 @@ function escreverArquivo(file, linhaFinal, funcoes, numeroVariaveisPrograma, som
         }
         
         var volume = (funcoes[i].funcao.operandosTotal + funcoes[i].funcao.operadoresTotal ) * Math.log2(funcoes[i].funcao.operadores.length + funcoes[i].funcao.operandos.length);
-        var complexidadeCiclomatica = funcoes[i].funcao.numeroIf + funcoes[i].funcao.numeroFor + funcoes[i].funcao.numeroWhile + funcoes[i].funcao.numeroDoWhile + funcoes[i].funcao.numeroSwitchCase + 1;
+        var complexidadeCiclomatica = funcoes[i].funcao.numeroIf + funcoes[i].funcao.numeroFor + funcoes[i].funcao.numeroWhile + funcoes[i].funcao.numeroDoWhile + funcoes[i].funcao.numeroSwitchCase + funcoes[i].funcao.Conditional + 1;
         var maintainability = Math.max(0, ((171 - (5.2 * Math.log(volume)) - (0.23 * (complexidadeCiclomatica)) - (16.2 * Math.log(funcoes[i].funcao.numeroLinhas)))*100) / 171);
 
         rowsFuncoes.push([funcoes[i].funcao.nome, funcoes[i].funcao.numeroLinhas, funcoes[i].funcao.numeroVariaveisD, 
@@ -795,16 +807,17 @@ function escreverArquivo(file, linhaFinal, funcoes, numeroVariaveisPrograma, som
         
         var infosPrograma = "";
 
-        infosPrograma = file.substr(+4).replace(".js", "") + "Programa;loc;" + linhaFinalPrograma + "\n" +
-                        file.substr(+4).replace(".js", "") + "Programa;var;" + funcoes.length + "\n" +
-                        file.substr(+4).replace(".js", "") + "Programa;func;" + numeroVariaveisPrograma + "\n";
+        infosPrograma = file.substr(+4).replace(".js", "") + ";biblioteca\n" +
+                        "###;loc;" + linhaFinalPrograma + "\n" +
+                        "###;var;" + funcoes.length + "\n" +
+                        "###;func;" + numeroVariaveisPrograma + "\n";
 
         var infosFuncoes = "";
         var infosEsprima = "";
 
         for(var i = 0; i < funcoes.length; i++) {
              var volume = (funcoes[i].funcao.operandosTotal + funcoes[i].funcao.operadoresTotal ) * Math.log2(funcoes[i].funcao.operadores.length + funcoes[i].funcao.operandos.length);
-             var complexidadeCiclomatica = funcoes[i].funcao.numeroIf + funcoes[i].funcao.numeroFor + funcoes[i].funcao.numeroWhile + funcoes[i].funcao.numeroDoWhile + funcoes[i].funcao.numeroSwitchCase + 1;
+             var complexidadeCiclomatica = funcoes[i].funcao.numeroIf + funcoes[i].funcao.numeroFor + funcoes[i].funcao.numeroWhile + funcoes[i].funcao.numeroDoWhile + funcoes[i].funcao.numeroSwitchCase + funcoes[i].funcao.Conditional +1;
              var maintainability = Math.max(0, ((171 - (5.2 * Math.log(volume)) - (0.23 * (complexidadeCiclomatica)) - (16.2 * Math.log(funcoes[i].funcao.numeroLinhas)))*100) / 171);
             
             infosFuncoes = infosFuncoes + funcoes[i].funcao.nome + ";loc;" + funcoes[i].funcao.numeroLinhas + "\n" +
