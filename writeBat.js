@@ -35,7 +35,7 @@ function getPackagesUrls(rows) {
     var packagesUrls = {};
 
     for (var key in rows) {
-        var id = key%1000;
+        var id = rows[key].ID%1000;
         if(packagesUrls[id] === undefined)
             packagesUrls[id] = [];
 
@@ -43,6 +43,7 @@ function getPackagesUrls(rows) {
     }
 
     console.log("Collected all packages urls!");
+    // console.log(packagesUrls);
     writeBatFile(packagesUrls);
 };
 
@@ -68,7 +69,7 @@ function connectGithubDB(query, options) {
 
 // init
 function init() {
-    var query = 'SELECT github_url FROM packages WHERE github_url IS NOT NULL LIMIT 100';
+    var query = 'SELECT * FROM packages WHERE github_url IS NOT NULL';
 
     connectGithubDB(query, options);
 }
