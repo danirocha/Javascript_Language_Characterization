@@ -1,10 +1,10 @@
 var request = require('request'),
     cheerio = require('cheerio'),
     Jetty = require("jetty"),
+    jetty = new Jetty(process.stdout),
     fs = require('fs'),
     db = require('./packagesDB.js'),
 
-    jetty = new Jetty(process.stdout),
     letters = ['a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z'],
     search = letters[0],
     $, totalResults, pageCount, pageToVisit, totalPages, packages, linePlace = 4

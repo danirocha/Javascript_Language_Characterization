@@ -28564,4 +28564,4 @@ git clone https://github.com/coldrye-es/inxs-common.git
 git clone https://github.com/zeixcom/Anzeixer.git
 git clone https://github.com/Olson3R/rosie_controller_zwave.git
 cd ..\
-EXIT 
+EXIT
