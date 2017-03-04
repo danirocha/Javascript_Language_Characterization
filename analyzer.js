@@ -27,6 +27,8 @@ var funcoesSemNome = 1;
 
 var dirName = ".\\src";
 
+var linhaFinalFuncaoPai = 0;
+
 readDirectory();
 
 function readDirectory() {
@@ -48,10 +50,14 @@ function readFiles(dirName, files) {
 
             if (err)
                 throw err;
-
+    
             var text = logData.toString();
 
+            console.log("Analyzing file " +  file.substr(+4));
+
             esprimaParse(text, file);
+
+            linhaFinalFuncaoPai = 0;
         });
       });
 }
@@ -82,7 +88,7 @@ function esprimaParse(text, file) {
 
     for(var i = 0; i < funcoes.length; i++)
     {
-        linhaFinalFuncao = contaFuncoes(funcoes[i].nodeFuncao,funcoes[i].funcao,linhaFinalFuncao);
+        linhaFinalFuncao = contaFuncoes(funcoes[i].nodeFuncao,funcoes[i].funcao,linhaFinalFuncao, i, funcoes);
     };
 
     calculaOperandos(syntax.tokens, funcoes);
@@ -193,21 +199,8 @@ function classificaToken(i, funcao, tokens) {
 function procuraFuncoes(node, funcoes)
 {
     if(node.type === 'FunctionDeclaration')
-    {
-        var funcao = {nome: '', numeroLinhas: 0, funcaoPai: -1, 
-                  numeroAssignment: 0, Array: 0, Block: 0, Binary:0, Break: 0, 
-                  numeroChamadas: 0, Catch: 0, Conditional: 0, Continue: 0, numeroDoWhile: 0,
-                  Debugger: 0, Empty: 0, Expression: 0, numeroFor: 0, ForIn: 0,
-                  numeroFunctionD: 0, FunctionE: 0, Identifier: 0, numeroIf: 0, Literal: 0, Label: 0,
-                  Logical: 0, Member: 0, NewExpression: 0, Object: 0, Property: 0,
-                  Return: 0, Sequence: 0, Switch: 0, numeroSwitchCase: 0, This: 0,
-                  Throw: 0, Try: 0, Unary: 0, Update: 0,
-                  numeroVariaveis: 0, numeroVariaveisD: 0, numeroWhile: 0, With: 0,
-                  operandosTotal: 0, operadoresTotal: 0,
-                  operandos: [], operadores: []
-            };
-    
-        var objeto = {funcao: funcao, nodeFuncao: node, nodeInicial: node};
+    {    
+        var objeto = criaObjeto(node);
 
         objeto.funcao.nome = node.id.name;
         objeto.nodeFuncao = node;
@@ -216,21 +209,8 @@ function procuraFuncoes(node, funcoes)
 
     else if(node.type === 'ExpressionStatement')
     {
-        
-        var funcao = {nome: '', numeroLinhas: 0, funcaoPai: -1, 
-                  numeroAssignment: 0, Array: 0, Block: 0, Binary:0, Break: 0, 
-                  numeroChamadas: 0, Catch: 0, Conditional: 0, Continue: 0, numeroDoWhile: 0,
-                  Debugger: 0, Empty: 0, Expression: 0, numeroFor: 0, ForIn: 0,
-                  numeroFunctionD: 0, FunctionE: 0, Identifier: 0, numeroIf: 0, Literal: 0, Label: 0,
-                  Logical: 0, Member: 0, NewExpression: 0, Object: 0, Property: 0,
-                  Return: 0, Sequence: 0, Switch: 0, numeroSwitchCase: 0, This: 0,
-                  Throw: 0, Try: 0, Unary: 0, Update: 0,
-                  numeroVariaveis: 0, numeroVariaveisD: 0, numeroWhile: 0, With: 0, 
-                  operandosTotal: 0, operadoresTotal: 0,
-                  operandos: [], operadores: []
-                };
     
-        var objeto = {funcao: funcao, nodeFuncao: node, nodeInicial: node};
+        var objeto = criaObjeto(node);
 
         if(node.expression.left && node.expression.right)
         {
@@ -278,20 +258,7 @@ function procuraFuncoes(node, funcoes)
                 {
                     if(node.declarations[i].init.type === 'FunctionExpression')
                     {
-                         var funcao = {nome: '', numeroLinhas: 0, funcaoPai: -1, 
-                                       numeroAssignment: 0, Array: 0, Block: 0, Binary:0, Break: 0, 
-                                       numeroChamadas: 0, Catch: 0, Conditional: 0, Continue: 0, numeroDoWhile: 0,
-                                       Debugger: 0, Empty: 0, Expression: 0, numeroFor: 0, ForIn: 0,
-                                       numeroFunctionD: 0, FunctionE: 0, Identifier: 0, numeroIf: 0, Literal: 0, Label: 0,
-                                       Logical: 0, Member: 0, NewExpression: 0, Object: 0, Property: 0,
-                                       Return: 0, Sequence: 0, Switch: 0, numeroSwitchCase: 0, This: 0,
-                                       Throw: 0, Try: 0, Unary: 0, Update: 0,
-                                       numeroVariaveis: 0, numeroVariaveisD: 0, numeroWhile: 0, With: 0, 
-                                       operadosTotal: 0, operadoresTotal: 0,
-                                       operandos: [], operadores: []
-                                    };
-    
-                        var objeto = {funcao: funcao, nodeFuncao: node, nodeInicial: node};
+                         var objeto = criaObjeto(node);
 
                         if(node.declarations[i].init.id === null)
                         {
@@ -310,20 +277,7 @@ function procuraFuncoes(node, funcoes)
 
                     else if(node.declarations[i].init.type === 'CallExpression')
                     {
-                         var funcao = {nome: '', numeroLinhas: 0, funcaoPai: -1, 
-                                        numeroAssignment: 0, Array: 0, Block: 0, Binary:0, Break: 0, 
-                                        numeroChamadas: 0, Catch: 0, Conditional: 0, Continue: 0, numeroDoWhile: 0,
-                                        Debugger: 0, Empty: 0, Expression: 0, numeroFor: 0, ForIn: 0,
-                                        numeroFunctionD: 0, FunctionE: 0, Identifier: 0, numeroIf: 0, Literal: 0, Label: 0,
-                                        Logical: 0, Member: 0, NewExpression: 0, Object: 0, Property: 0,
-                                        Return: 0, Sequence: 0, Switch: 0, numeroSwitchCase: 0, This: 0,
-                                        Throw: 0, Try: 0, Unary: 0, Update: 0,
-                                        numeroVariaveis: 0, numeroVariaveisD: 0, numeroWhile: 0, With: 0, 
-                                        operadosTotal: 0, operadoresTotal: 0,
-                                        operandos: [], operadores: []
-                                        };
-    
-                        var objeto = {funcao: funcao, nodeFuncao: node, nodeInicial: node};
+                        var objeto = criaObjeto(node);
 
                         if(node.declarations[i].init.callee.type === 'FunctionExpression')
                         {
@@ -335,20 +289,7 @@ function procuraFuncoes(node, funcoes)
 
                     else if(node.declarations[i].init.type === 'NewExpression')
                     {
-                         var funcao = {nome: '', numeroLinhas: 0, funcaoPai: -1, 
-                                        numeroAssignment: 0, Array: 0, Block: 0, Binary:0, Break: 0, 
-                                        numeroChamadas: 0, Catch: 0, Conditional: 0, Continue: 0, numeroDoWhile: 0,
-                                        Debugger: 0, Empty: 0, Expression: 0, numeroFor: 0, ForIn: 0,
-                                        numeroFunctionD: 0, FunctionE: 0, Identifier: 0, numeroIf: 0, Literal: 0, Label: 0,
-                                        Logical: 0, Member: 0, NewExpression: 0, Object: 0, Property: 0,
-                                        Return: 0, Sequence: 0, Switch: 0, numeroSwitchCase: 0, This: 0,
-                                        Throw: 0, Try: 0, Unary: 0, Update: 0,
-                                        numeroVariaveis: 0, numeroVariaveisD: 0, numeroWhile: 0, With: 0, 
-                                        operadosTotal: 0, operadoresTotal: 0,
-                                        operandos: [], operadores: []
-                                      };
-    
-                        var objeto = {funcao: funcao, nodeFuncao: node, nodeInicial: node};
+                         var objeto = criaObjeto(node);
 
                         if(node.declarations[i].init.callee.type === 'FunctionExpression')
                         {
@@ -360,21 +301,8 @@ function procuraFuncoes(node, funcoes)
 
                     else if(node.declarations[i].init.type === 'ArrowFunctionExpression')
                     {
-                         var funcao = {nome: '', numeroLinhas: 0, funcaoPai: -1, 
-                                        numeroAssignment: 0, Array: 0, Block: 0, Binary:0, Break: 0, 
-                                        numeroChamadas: 0, Catch: 0, Conditional: 0, Continue: 0, numeroDoWhile: 0,
-                                        Debugger: 0, Empty: 0, Expression: 0, numeroFor: 0, ForIn: 0,
-                                        numeroFunctionD: 0, FunctionE: 0, Identifier: 0, numeroIf: 0, Literal: 0, Label: 0,
-                                        Logical: 0, Member: 0, NewExpression: 0, Object: 0, Property: 0,
-                                        Return: 0, Sequence: 0, Switch: 0, numeroSwitchCase: 0, This: 0,
-                                        Throw: 0, Try: 0, Unary: 0, Update: 0,
-                                        numeroVariaveis: 0, numeroVariaveisD: 0, numeroWhile: 0, With: 0, 
-                                        operadosTotal: 0, operadoresTotal: 0,
-                                        operandos: [], operadores: []
-                                       };
-    
-                        var objeto = {funcao: funcao, nodeFuncao: node, nodeInicial: node};
-
+                        var objeto = criaObjeto(node);
+                        
                         if(node.declarations[i].init.callee.type === 'FunctionExpression')
                         {
                             objeto.funcao.nome = node.declarations[i].id.name;
@@ -388,6 +316,25 @@ function procuraFuncoes(node, funcoes)
     }
 }
 
+function criaObjeto(node) {
+     var funcao = {nome: '', numeroLinhas: 0, funcaoPai: -1, funcaoFilho: -1,
+                  numeroAssignment: 0, Array: 0, Block: 0, Binary:0, Break: 0, 
+                  numeroChamadas: 0, Catch: 0, Conditional: 0, Continue: 0, numeroDoWhile: 0,
+                  Debugger: 0, Empty: 0, Expression: 0, numeroFor: 0, ForIn: 0,
+                  numeroFunctionD: 0, FunctionE: 0, Identifier: 0, numeroIf: 0, Literal: 0, Label: 0,
+                  Logical: 0, Member: 0, NewExpression: 0, Object: 0, Property: 0,
+                  Return: 0, Sequence: 0, Switch: 0, numeroSwitchCase: 0, This: 0,
+                  Throw: 0, Try: 0, Unary: 0, Update: 0,
+                  numeroVariaveis: 0, numeroVariaveisD: 0, numeroWhile: 0, With: 0, 
+                  operandosTotal: 0, operadoresTotal: 0,
+                  operandos: [], operadores: []
+                };
+    
+        var objeto = {funcao: funcao, nodeFuncao: node, nodeInicial: node};
+
+        return objeto;
+}
+
 function contaLinhas(node,linhaFinalPrograma) {
     if(linhaFinalPrograma < node.loc.end.line)
         return node.loc.end.line;
@@ -395,7 +342,7 @@ function contaLinhas(node,linhaFinalPrograma) {
     return linhaFinalPrograma;
 }
 
-function contaFuncoes(node,funcao,linhaFinalFuncao) {
+function contaFuncoes(node,funcao,linhaFinalFuncao, i, funcoes) {
 
     var linhaFinal = 0;
 
@@ -405,11 +352,18 @@ function contaFuncoes(node,funcao,linhaFinalFuncao) {
 
         funcao.numeroLinhas = (node.loc.end.line - node.loc.start.line) + 1;
         
-        if(linhaFinal > linhaFinalFuncao)
-        {
-           funcao.funcaoPai = 1;
-           linhaFinalFuncao = node.loc.end.line;
-       }
+        if(linhaFinal < linhaFinalFuncaoPai) {
+            if(linhaFinal > linhaFinalFuncao)
+                funcao.funcaoFilho = 1;
+            else {
+                funcoes[i-1].funcao.funcaoPai = 1;
+                funcao.funcaoFilho = 1;
+            }
+        }
+
+        else {
+            linhaFinalFuncaoPai = linhaFinal;
+        }
 
         estraverse.traverse(node, {
             enter: function(node) {
@@ -469,7 +423,7 @@ function contaFuncoes(node,funcao,linhaFinalFuncao) {
                                          0, 0, 0, 0, 0];
     }
 
-    return linhaFinalFuncao;
+    return linhaFinal;
 }
 
 function contaVariaveis(node) {
@@ -483,14 +437,29 @@ function contaVariaveis(node) {
 function checarFilhos(funcoes,i,escolha) {
     var j = i+1;
     var count = 0;
+    var filhos = 0;
 
-    while(j < funcoes.length && funcoes[j].funcao.funcaoPai !== 1)
-    {
-        count++;
+    while(j < funcoes.length) {
+        if(funcoes[j].funcao.funcaoPai === 1) {
+            if(funcoes[j].funcao.funcaoFilho === -1)
+                break;
+            
+            else {
+                count++;
+                filhos = checarFilhos(funcoes, j, escolha);
+                //j = j + filhos + 1;
+            }
+        }
+
+        else {
+            count++;
+        }
+
         j++;
     }
 
-    
+    filhos = count;
+
     while(count > 0)
     {
         
@@ -728,6 +697,8 @@ function checarFilhos(funcoes,i,escolha) {
             count--;
         }
     }
+
+    return filhos;
 }
 
  function contaNos(node, noEsprima, j) 
@@ -764,10 +735,10 @@ function escreverArquivo(file, linhaFinal, funcoes, numeroVariaveisPrograma, som
 
     for (var i = 0; i < funcoes.length; i++) {
         
-        if(funcoes[i].funcao.funcaoPai === 1)
+        if(funcoes[i].funcao.funcaoPai === 1 && funcoes[i].funcao.funcaoFilho === -1)
         {
             for(var j = 0; j < 39; j++)
-            checarFilhos(funcoes,i,j);
+                checarFilhos(funcoes,i,j);
         }
         
         var volume = (funcoes[i].funcao.operandosTotal + funcoes[i].funcao.operadoresTotal ) * Math.log2(funcoes[i].funcao.operadores.length + funcoes[i].funcao.operandos.length);
