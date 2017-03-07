@@ -18,8 +18,10 @@ function writeBatFile(gitCloneArray) {
         var i = 0,
             dist = '.\\'+key;
         batFile += 'mkdir '+dist+' && cd '+dist+'\n';
-        for(i; i< gitCloneArray[key].length; i++)
-            batFile += 'git clone ' + gitCloneArray[key][i] + '.git\n';
+        for(i; i< gitCloneArray[key].length; i++) {
+            var aux = gitCloneArray[key][i].split("//");
+            batFile += 'git clone ' + aux[0] + "//username:password@" + aux[1] + '.git\n';
+        }
         batFile += 'cd ..\\\n';
     }
 

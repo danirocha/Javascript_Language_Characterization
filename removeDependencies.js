@@ -3,7 +3,7 @@ var fs = require('fs'),
     jetty = new Jetty(process.stdout),
 
     baseDirectory = "C:\\Users\\Danish Bloom\\Desktop\\dist",
-    directoriesToRemove = ['node_modules', 'bower_components'],
+    directoriesToRemove = ['.git', 'node_modules', 'bower_components'],
     allPackagesDirectories = [],
     directoriesTree = {};
 
@@ -15,7 +15,7 @@ function writeBat() {
         for(j in directoriesTree[i])
             for(key in directoriesToRemove)
                 if(directoriesTree[i][j].indexOf(directoriesToRemove[key]) != -1) {
-                    auxString = "RD /s " + baseDirectory + "\\" + i + "\\" + j + "\\" + directoriesToRemove[key] + "\n";
+                    auxString = "cd " + baseDirectory + "\\" + i + "\\" + j + "\necho Y| rmdir " + directoriesToRemove[key] + " /s \n";
                     batFile += auxString;
                 }
     batFile += "EXIT";
