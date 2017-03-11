@@ -5,16 +5,34 @@ var fs = require('fs'),
     allLibraries = {};
 
 // read packages directories
-function readDirectories(dirName) {
-    fs.readdir(dirName, function(err, list) {
+function readDirectories(dirPath) {
+    var obj = {};
+
+    fs.readdir(dirPath, function(err, list) {
         if (err)
             throw err;
-
+        // console.log(dirPath);
         list.map(function(dir) {
-            allLibraries[dir] = {}; //init an object for each library
-            return path.join(dirName, dir);
-        }).forEach(function(dirPath) {
-            // console.log(dirPath);
+            if(allLibraries[dir] === undefined)
+                allLibraries[dir] = { name: dir , files: []}; //init an object for each library
+            obj._name = dir;
+            return path.join(dirPath, dir);
+        }).forEach(function(filePath) {
+            obj.path = filePath;
+            fs.stat(filePath, function(err, stats){
+                console.log(stats);
+                if(stats.isDirectory()){
+                    // console.log(obj._name);
+
+                    // for(var i in stats){
+                    //     if('function' !== typeof stats[i]){
+                    //         console.log(i + '\t= ' + stats[i]);
+                    //     }
+                    // }
+                }
+            });
+
+            // console.log(obj._name);
         });
     });
 }
