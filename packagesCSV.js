@@ -1,69 +1,67 @@
 var fs = require('fs'),
     path = require('path'),
 
+    // baseDirectory = "C:\\Users\\IBM_ADMIN\\Documents\\Projetos\\test_project",
     baseDirectory = "C:\\Users\\Danish Bloom\\Desktop\\dist",
     allLibraries = {};
 
-// read packages directories
-function readDirectories(dirPath) {
-    var obj = {};
-
-    fs.readdir(dirPath, function(err, list) {
+// read all subdirectories recursively
+function readDirectories(currentDir, libName) {
+    fs.readdir(currentDir, function(err, list) {
         if (err)
             throw err;
-        // console.log(dirPath);
-        list.map(function(dir) {
-            if(allLibraries[dir] === undefined)
-                allLibraries[dir] = { name: dir , files: []}; //init an object for each library
-            obj._name = dir;
-            return path.join(dirPath, dir);
+
+        allElems = list.map(function(elem) {
+            return path.join(currentDir, elem);
+        });
+
+        allElems.filter(function (elemPath) {
+            return fs.statSync(elemPath).isFile();
         }).forEach(function(filePath) {
-            obj.path = filePath;
-            fs.stat(filePath, function(err, stats){
-                console.log(stats);
-                if(stats.isDirectory()){
-                    // console.log(obj._name);
+            var obj = {
+              path: path.dirname(filePath),
+              name: path.basename(filePath).split(".")[0],
+              ext: path.extname(filePath),
+              sizeInBytes: fs.statSync(filePath).size
+            };
 
-                    // for(var i in stats){
-                    //     if('function' !== typeof stats[i]){
-                    //         console.log(i + '\t= ' + stats[i]);
-                    //     }
-                    // }
-                }
-            });
+            allLibraries[libName].push(obj);
+            // console.log(obj);
+        });
 
-            // console.log(obj._name);
+        allElems.filter(function (elemPath) {
+            return fs.statSync(elemPath).isDirectory();
+        }).forEach(function(dirPath) {
+            readDirectories(dirPath, libName);
         });
     });
 }
 
-// read %1000 directories
-function readBaseDirectory() {    
+// read all basedirectories and extract libs names
+function readBaseDirectories(baseDirectory) {
     fs.readdir(baseDirectory, function(err, list) {
         if (err)
             throw err;
 
-        // console.log(list[0]);
         list.map(function(dir) {
             return path.join(baseDirectory, dir);
         }).forEach(function(dirPath) {
-            readDirectories(dirPath);
+            fs.readdir(dirPath, function(err, list) {
+                if (err)
+                    throw err;
+
+                list.map(function(dir) {
+                    allLibraries[dir] = [];
+                    return {
+                              path: path.join(dirPath, dir),
+                              libName: dir
+                          };
+                }).forEach(function(dirObj) {
+                    readDirectories(dirObj.path, dirObj.libName);
+                });
+            });
         });
     });
 }
 
-function readFiles(dirName) {
-    files.map(function(dir) {
-        return path.join(dirName, dir);
-    }).filter(function(file) {
-        return file.substr(-3) === '.js';
-    }).forEach(function(file) {
-        fs.readFile(file, function(err, data) {
-
-            if (err)
-                throw err;
-        });
-      });
-}
-
-readBaseDirectory();
+readBaseDirectories(baseDirectory);
