@@ -25,44 +25,71 @@ var quantidadeNosEsprimas = [0, 0, 0, 0, 0,
 
 var funcoesSemNome = 1;
 
-var dirName = ".\\src";
+var dirName = "C:\\Users\\luisb\\Documents\\MEGA\\FACULDADE\\TCC\\Javascript_Language_Characterization\\src";
+
+var dirOriginal = "C:\\Users\\luisb\\Documents\\MEGA\\FACULDADE\\TCC\\Javascript_Language_Characterization\\src";
+
+var nomeBiblioteca = "";
 
 var linhaFinalFuncaoPai = 0;
 
-readDirectory();
+var bibliotecas = [];
 
-function readDirectory() {
+readDirectory(dirName, nomeDaBiblioteca);
+
+function escreveArquivo() {
+    for(var i = 0; i < bibliotecas.length; i++) {
+         fs.writeFile(".\\results\\" + bibliotecas[i].nome + " R.txt", bibliotecas[i].infos, function(err) {
+            if(err) {
+                return console.log(err);
+            }
+        });
+
+        console.log("The analyze for " + bibliotecas[i].nome + " was saved!");
+    }
+}
+
+function readDirectory(dirName, nomeDaBiblioteca) {
     fs.readdir(dirName, function(err, files) {
         if (err)
             throw err;
     
-        readFiles(dirName, files);
+        readFiles(dirName, files, nomeDaBiblioteca);
     });
 }
 
-function readFiles(dirName, files) {
+function readFiles(dirName, files, nomeDaBiblioteca, cb) {
     files.map(function(file) {
         return path.join(dirName, file);
-    }).filter(function(file) {
-        return file.substr(-3) === '.js';
     }).forEach(function(file) {
-        fs.readFile(file, function(err, logData) {
+        var stats = fs.statSync(file);
+        if(stats.isDirectory()) {
+            readDirectory(file.toString(), nomeDaBiblioteca);
+        }
 
-            if (err)
-                throw err;
-    
-            var text = logData.toString();
+        else {
+            var extension = path.extname(file);
+            
+            if(extension === '.js') {
+                fs.readFile(file, function(err, logData) {
 
-            console.log("Analyzing file " +  file.substr(+4));
+                    if (err)
+                        throw err;
+            
+                    var text = logData.toString();
 
-            esprimaParse(text, file);
+                    console.log("Analyzing file " +  getFile(file.toString(), "\\", file.toString().match(/\\/gi).length));
 
-            linhaFinalFuncaoPai = 0;
-        });
+                    esprimaParse(text, file, nomeDaBiblioteca);
+
+                    linhaFinalFuncaoPai = 0;
+                });
+            }
+        }
       });
 }
 
-function esprimaParse(text, file) {
+function esprimaParse(text, file, nomeDaBiblioteca) {
     var syntax = esprima.parse(text, {
         loc: true,
         tokens: true
@@ -93,9 +120,9 @@ function esprimaParse(text, file) {
 
     calculaOperandos(syntax.tokens, funcoes);
 
-    escreverArquivo(file,linhaFinalPrograma,funcoes,numeroVariaveisPrograma);
+    montaArquivoBibliotecas(file,linhaFinalPrograma,funcoes,numeroVariaveisPrograma, nomeDaBiblioteca);
 
-    escreveArquivoR(file, linhaFinalPrograma, funcoes, numeroVariaveisPrograma);
+    montaArquivoRBibliotecas(file, linhaFinalPrograma, funcoes, numeroVariaveisPrograma, nomeDaBiblioteca);
 }
 
 function calculaOperandos(tokens, funcoes)
@@ -238,7 +265,7 @@ function procuraFuncoes(node, funcoes)
          else if(node.expression.callee) {
             if(node.expression.callee.type === 'FunctionExpression') {
                 if(node.expression.callee.id !== null) 
-                    objeto.funcao.nome = node.node.expression.callee.id;
+                    objeto.funcao.nome = node.expression.callee.id.nome;
                 else
                     objeto.funcao.nome = "Função anônima";
                 
@@ -707,7 +734,7 @@ function checarFilhos(funcoes,i,escolha) {
         quantidadeNosEsprimas[j]++;
 }
 
-function escreverArquivo(file, linhaFinal, funcoes, numeroVariaveisPrograma, soma) {
+function montaArquivoBibliotecas(file, linhaFinal, funcoes, numeroVariaveisPrograma, soma, nomeDaBiblioteca) {
     
     var infosPrograma = "";
     var infosFuncoes = "";
@@ -767,18 +794,94 @@ function escreverArquivo(file, linhaFinal, funcoes, numeroVariaveisPrograma, som
      var tableE = tableN.table(rowsNosEsprimas);
     infosNosEsprima = "INFORMATION ABOUT EACH FUNCTION AND ESPRIMA NODE\n" + tableE;
 
-    fs.writeFile("Relatorio Programa " + file.substr(+4) + ".txt", infosPrograma + infosFuncoes + infosNosEsprima, function(err) {
+     var fileName = getFile(file.toString(), "\\", file.toString().match(/\\/gi).length);
+
+    var filePath = file.replace(dirOriginal, "");
+    filePath = ".\\results" + filePath.replace(fileName,"");
+
+    var numeroPastas = filePath.match(/\\/gi).length;
+        
+    for(var i = 1; i <= numeroPastas; i++) {
+        var pasta = getPath(filePath, "\\", i);
+
+        if(i > 1) {
+            if(getFile(pasta, "\\", pasta.match(/\\/gi).length) == nomeDaBiblioteca) {
+                nomeBiblioteca = nomeDaBiblioteca;
+            }
+
+            else
+                nomeBiblioteca = "";
+        }        
+
+        if (!fs.existsSync(pasta)){
+            fs.mkdirSync(pasta);
+         }
+    }
+
+    fs.writeFile(filePath + getFile(file.toString(), "\\", file.toString().match(/\\/gi).length).replace(".js", "") + ".txt", infosPrograma + infosFuncoes + infosNosEsprima, function(err) {
         if(err) {
             return console.log(err);
         }
     });
 }
 
- function escreveArquivoR(file, linhaFinalPrograma, funcoes, numeroVariaveisPrograma) {
+function getPath(s, c, n) {
+  var idx;
+  var i = 0;
+  var newS = '';
+  do {
+    idx = s.indexOf(c);
+    newS += s.substring(0, idx);
+    s = s.substring(idx+1);
+  } while (++i < n && (newS += c))
+  return newS;
+}
+
+
+function getFile(s, c, n) {
+  var idx;
+  var i = n;
+  var newS = '';
+  do {
+    idx = s.indexOf(c);
+    newS = s.substring(idx + 1);
+    s = s.substring(s.indexOf(c) + 1);
+    i--;
+  } while (i > 0)
+  return newS;
+}
+
+ function montaArquivoRBibliotecas(file, linhaFinalPrograma, funcoes, numeroVariaveisPrograma, nomeDaBiblioteca) {
         
         var infosPrograma = "";
+        var fileName = getFile(file.toString(), "\\", file.toString().match(/\\/gi).length);
 
-        infosPrograma = file.substr(+4).replace(".js", "") + ";biblioteca\n" +
+        var filePath = file.replace(dirOriginal, "");
+        filePath = ".\\results" + filePath.replace(fileName,"");
+
+        var numeroPastas = filePath.match(/\\/gi).length;
+        
+        var achou = 0;
+
+        for(var i = 1; i <= numeroPastas; i++) {
+            var pasta = getPath(filePath, "\\", i);
+
+            if(i > 1) {
+                if(getFile(pasta, "\\", pasta.match(/\\/gi).length) == nomeDaBiblioteca) {
+                    nomeBiblioteca = nomeDaBiblioteca;
+                    achou = 1;
+                }
+            }   
+
+            if (!fs.existsSync(pasta)){
+                fs.mkdirSync(pasta);
+            }
+        }
+
+        if(achou == 0)
+            nomeBiblioteca = "";
+
+        infosPrograma = nomeBiblioteca + ";biblioteca\n" +
                         "###;loc;" + linhaFinalPrograma + "\n" +
                         "###;var;" + funcoes.length + "\n" +
                         "###;func;" + numeroVariaveisPrograma + "\n";
@@ -839,11 +942,28 @@ function escreverArquivo(file, linhaFinal, funcoes, numeroVariaveisPrograma, som
                                           funcoes[i].funcao.nome + ";WithStatement;" + funcoes[i].funcao.With + "\n";
         }
 
-        fs.writeFile("Arquivo R - Programa " + file.substr(+4) + ".txt", infosPrograma + infosFuncoes + infosEsprima, function(err) {
-        if(err) {
-            return console.log(err);
+          achou = 0;
+        
+        for(var i = 0; i < bibliotecas.length; i++) {
+            if(bibliotecas[i].nome === nomeBiblioteca) {
+                bibliotecas[i].infos = bibliotecas[i].infos + "\n\n" + infosPrograma + infosFuncoes + infosEsprima;
+                achou = 1;
+                break;
+            }
         }
 
-        console.log("The analyze for " + file.substr(+4) + " was saved!");
-    });
+        if(achou === 0) {
+            var biblioteca = {nome: nomeBiblioteca, infos: infosPrograma + infosFuncoes + infosEsprima};
+            bibliotecas.push(biblioteca);
+        }
+
+        escreveArquivo();
+
+        fs.writeFile(filePath + getFile(file.toString(), "\\", file.toString().match(/\\/gi).length).replace(".js", "") + " R.txt", infosPrograma + infosFuncoes + infosEsprima, function(err) {
+            if(err) {
+                return console.log(err);
+            }
+
+         console.log("The analyze for " + fileName + " was saved!");
+        });
 }
