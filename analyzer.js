@@ -4,6 +4,8 @@ var esprima = require('esprima');
 var estraverse = require('estraverse');
 var tableN = require('ascii-data-table').default;
 
+const args = process.argv;
+
 var nosEsprima = ['AssignmentExpression', 'ArrayExpression', 'BlockStatement', 'BinaryExpression', 'BreakStatement',
                   'CallExpression', 'CatchClause', 'ConditionalExpression', 'ContinueStatement', 'DoWhileStatement',
                   'DebuggerStatement', 'EmptyStatement', 'ExpressionStatement', 'ForStatement', 'ForInStatement',
@@ -25,46 +27,50 @@ var quantidadeNosEsprimas = [0, 0, 0, 0, 0,
 
 var funcoesSemNome = 1;
 
-var dirName = "C:\\Users\\luisb\\Documents\\MEGA\\FACULDADE\\TCC\\Javascript_Language_Characterization\\src";
+var dirName = args[2];
 
-var dirOriginal = "C:\\Users\\luisb\\Documents\\MEGA\\FACULDADE\\TCC\\Javascript_Language_Characterization\\src";
+var id = args[3];
 
-var nomeBiblioteca = "";
+var nomeBiblioteca = args[4];
 
 var linhaFinalFuncaoPai = 0;
 
-var bibliotecas = [];
+var infosBibliotecas = "";
 
-readDirectory(dirName, nomeDaBiblioteca);
+readDirectory(dirName, nomeBiblioteca, id);
 
 function escreveArquivo() {
-    for(var i = 0; i < bibliotecas.length; i++) {
-         fs.writeFile(".\\results\\" + bibliotecas[i].nome + " R.txt", bibliotecas[i].infos, function(err) {
+    var pasta = ".\\results\\" + (id%1000);
+
+    if(!fs.existsSync(pasta)){
+        fs.mkdirSync(pasta);
+    };
+
+    fs.writeFile(pasta + "\\" + nomeBiblioteca + " R.txt", infosBibliotecas, function(err) {
             if(err) {
                 return console.log(err);
             }
         });
 
-        console.log("The analyze for " + bibliotecas[i].nome + " was saved!");
-    }
+    console.log("The analyze for " + nomeBiblioteca + " was saved!");
 }
 
-function readDirectory(dirName, nomeDaBiblioteca) {
+function readDirectory(dirName, nomeBiblioteca, id) {
     fs.readdir(dirName, function(err, files) {
         if (err)
             throw err;
     
-        readFiles(dirName, files, nomeDaBiblioteca);
+        readFiles(dirName, files, nomeBiblioteca, id);
     });
 }
 
-function readFiles(dirName, files, nomeDaBiblioteca, cb) {
+function readFiles(dirName, files, nomeBiblioteca, id, cb) {
     files.map(function(file) {
         return path.join(dirName, file);
     }).forEach(function(file) {
         var stats = fs.statSync(file);
         if(stats.isDirectory()) {
-            readDirectory(file.toString(), nomeDaBiblioteca);
+            readDirectory(file.toString(), nomeBiblioteca, id);
         }
 
         else {
@@ -80,7 +86,7 @@ function readFiles(dirName, files, nomeDaBiblioteca, cb) {
 
                     console.log("Analyzing file " +  getFile(file.toString(), "\\", file.toString().match(/\\/gi).length));
 
-                    esprimaParse(text, file, nomeDaBiblioteca);
+                    esprimaParse(text, file, nomeBiblioteca, id);
 
                     linhaFinalFuncaoPai = 0;
                 });
@@ -89,10 +95,11 @@ function readFiles(dirName, files, nomeDaBiblioteca, cb) {
       });
 }
 
-function esprimaParse(text, file, nomeDaBiblioteca) {
+function esprimaParse(text, file, nomeBiblioteca, id) {
     var syntax = esprima.parse(text, {
         loc: true,
-        tokens: true
+        tokens: true,
+        tolerant : true,
     });
 
     var linhaFinalPrograma = 0;
@@ -120,9 +127,9 @@ function esprimaParse(text, file, nomeDaBiblioteca) {
 
     calculaOperandos(syntax.tokens, funcoes);
 
-    montaArquivoBibliotecas(file,linhaFinalPrograma,funcoes,numeroVariaveisPrograma, nomeDaBiblioteca);
+    //montaArquivoBibliotecas(file,linhaFinalPrograma,funcoes,numeroVariaveisPrograma, nomeBiblioteca);
 
-    montaArquivoRBibliotecas(file, linhaFinalPrograma, funcoes, numeroVariaveisPrograma, nomeDaBiblioteca);
+    montaArquivoRBibliotecas(file, linhaFinalPrograma, funcoes, numeroVariaveisPrograma, nomeBiblioteca);
 }
 
 function calculaOperandos(tokens, funcoes)
@@ -734,7 +741,7 @@ function checarFilhos(funcoes,i,escolha) {
         quantidadeNosEsprimas[j]++;
 }
 
-function montaArquivoBibliotecas(file, linhaFinal, funcoes, numeroVariaveisPrograma, soma, nomeDaBiblioteca) {
+function montaArquivoBibliotecas(file, linhaFinal, funcoes, numeroVariaveisPrograma, soma, nomeBiblioteca) {
     
     var infosPrograma = "";
     var infosFuncoes = "";
@@ -805,8 +812,8 @@ function montaArquivoBibliotecas(file, linhaFinal, funcoes, numeroVariaveisProgr
         var pasta = getPath(filePath, "\\", i);
 
         if(i > 1) {
-            if(getFile(pasta, "\\", pasta.match(/\\/gi).length) == nomeDaBiblioteca) {
-                nomeBiblioteca = nomeDaBiblioteca;
+            if(getFile(pasta, "\\", pasta.match(/\\/gi).length) == nomeBiblioteca) {
+                nomeBiblioteca = nomeBiblioteca;
             }
 
             else
@@ -851,36 +858,10 @@ function getFile(s, c, n) {
   return newS;
 }
 
- function montaArquivoRBibliotecas(file, linhaFinalPrograma, funcoes, numeroVariaveisPrograma, nomeDaBiblioteca) {
+ function montaArquivoRBibliotecas(file, linhaFinalPrograma, funcoes, numeroVariaveisPrograma, nomeBiblioteca, id) {
         
         var infosPrograma = "";
-        var fileName = getFile(file.toString(), "\\", file.toString().match(/\\/gi).length);
-
-        var filePath = file.replace(dirOriginal, "");
-        filePath = ".\\results" + filePath.replace(fileName,"");
-
-        var numeroPastas = filePath.match(/\\/gi).length;
         
-        var achou = 0;
-
-        for(var i = 1; i <= numeroPastas; i++) {
-            var pasta = getPath(filePath, "\\", i);
-
-            if(i > 1) {
-                if(getFile(pasta, "\\", pasta.match(/\\/gi).length) == nomeDaBiblioteca) {
-                    nomeBiblioteca = nomeDaBiblioteca;
-                    achou = 1;
-                }
-            }   
-
-            if (!fs.existsSync(pasta)){
-                fs.mkdirSync(pasta);
-            }
-        }
-
-        if(achou == 0)
-            nomeBiblioteca = "";
-
         infosPrograma = nomeBiblioteca + ";biblioteca\n" +
                         "###;loc;" + linhaFinalPrograma + "\n" +
                         "###;var;" + funcoes.length + "\n" +
@@ -942,28 +923,6 @@ function getFile(s, c, n) {
                                           funcoes[i].funcao.nome + ";WithStatement;" + funcoes[i].funcao.With + "\n";
         }
 
-          achou = 0;
-        
-        for(var i = 0; i < bibliotecas.length; i++) {
-            if(bibliotecas[i].nome === nomeBiblioteca) {
-                bibliotecas[i].infos = bibliotecas[i].infos + "\n\n" + infosPrograma + infosFuncoes + infosEsprima;
-                achou = 1;
-                break;
-            }
-        }
-
-        if(achou === 0) {
-            var biblioteca = {nome: nomeBiblioteca, infos: infosPrograma + infosFuncoes + infosEsprima};
-            bibliotecas.push(biblioteca);
-        }
-
+        infosBibliotecas = infosBibliotecas + "\n\n" + infosPrograma + infosFuncoes + infosEsprima;
         escreveArquivo();
-
-        fs.writeFile(filePath + getFile(file.toString(), "\\", file.toString().match(/\\/gi).length).replace(".js", "") + " R.txt", infosPrograma + infosFuncoes + infosEsprima, function(err) {
-            if(err) {
-                return console.log(err);
-            }
-
-         console.log("The analyze for " + fileName + " was saved!");
-        });
 }

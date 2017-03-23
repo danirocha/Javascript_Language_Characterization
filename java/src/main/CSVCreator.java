@@ -7,11 +7,10 @@ import java.io.IOException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.commons.io.FilenameUtils;
-
 public class CSVCreator {
 
 	private static final String DIRETORIO_A_SALVAR = "C:\\Users\\luisb\\Documents\\MEGA\\FACULDADE\\TCC\\Javascript_Language_Characterization";
+	private static final String CAMINHO_COMUM = "C:\\Users\\luisb\\Documents\\ColetaDadosJavascript\\";
 	
 	private String nomeBiblioteca = "";
 	
@@ -47,7 +46,7 @@ public class CSVCreator {
 			File arquivo = arquivos[i];
 			
 			if(arquivo.isDirectory()) {
-				Pattern pattern = Pattern.compile("C:/Users/luisb/Documents/Coleta Dados Javascript/dist/\\d+/(.*?)/");
+				Pattern pattern = Pattern.compile("C:/Users/luisb/Documents/ColetaDadosJavascript/dist/\\d+/(.*?)/");
 				Matcher match = pattern.matcher(arquivo.getAbsolutePath().replace("\\", "/") + "/");
 				
 				if(match.find()) {
@@ -62,11 +61,12 @@ public class CSVCreator {
 			}
 			
 			else if(arquivo.isFile()) {
-				String extensao = FilenameUtils.getExtension(arquivo.getName());
+				int lastIndex = arquivo.getName().lastIndexOf(".");
+				String extensao = arquivo.getName().substring(lastIndex + 1);
 				String nome = arquivo.getName().replace("." + extensao, "");
 				long tamanho = arquivo.length();
 				
-				bw.write(nome + "\t" + nomeBiblioteca + "\t" + arquivo.getAbsolutePath() + "\t" + extensao + "\t" + tamanho + "\n");
+				bw.write(nome + "\t" + nomeBiblioteca + "\t" + arquivo.getAbsolutePath().replace(CAMINHO_COMUM, "").replace(arquivo.getName(), "") + "\t" + extensao + "\t" + tamanho + "\n");
 				numeroArquivosLidos++;
 			}
 		}
