@@ -27,7 +27,7 @@ var quantidadeNosEsprimas = [0, 0, 0, 0, 0,
 
 var funcoesSemNome = 1;
 
-var dirName = args[2];
+var dirName =  args[2];
 
 var id = args[3];
 
@@ -37,6 +37,7 @@ var linhaFinalFuncaoPai = 0;
 
 var infosBibliotecas = "";
 
+console.log("Analyze for " + nomeBiblioteca + " began!");
 readDirectory(dirName, nomeBiblioteca, id);
 
 function escreveArquivo() {
@@ -51,20 +52,15 @@ function escreveArquivo() {
                 return console.log(err);
             }
         });
-
-    console.log("The analyze for " + nomeBiblioteca + " was saved!");
 }
 
 function readDirectory(dirName, nomeBiblioteca, id) {
-    fs.readdir(dirName, function(err, files) {
-        if (err)
-            throw err;
+    var files = fs.readdirSync(dirName);
     
-        readFiles(dirName, files, nomeBiblioteca, id);
-    });
+    readFiles(dirName, files, nomeBiblioteca, id);
 }
 
-function readFiles(dirName, files, nomeBiblioteca, id, cb) {
+function readFiles(dirName, files, nomeBiblioteca, id) {
     files.map(function(file) {
         return path.join(dirName, file);
     }).forEach(function(file) {
@@ -74,34 +70,45 @@ function readFiles(dirName, files, nomeBiblioteca, id, cb) {
         }
 
         else {
-            var extension = path.extname(file);
+            fs.readFile(file, function(err, logData) {
+
+                if (err)
+                    throw err;
             
-            if(extension === '.js') {
-                fs.readFile(file, function(err, logData) {
+                var text = logData.toString();
 
-                    if (err)
-                        throw err;
-            
-                    var text = logData.toString();
+                console.log("Analyzing file " +  getFile(file.toString(), "\\", file.toString().match(/\\/gi).length));
 
-                    console.log("Analyzing file " +  getFile(file.toString(), "\\", file.toString().match(/\\/gi).length));
-
-                    esprimaParse(text, file, nomeBiblioteca, id);
-
-                    linhaFinalFuncaoPai = 0;
-                });
-            }
+                esprimaParse(text, file, nomeBiblioteca, id);
+                linhaFinalFuncaoPai = 0;
+            });
         }
       });
 }
 
 function esprimaParse(text, file, nomeBiblioteca, id) {
-    var syntax = esprima.parse(text, {
-        loc: true,
-        tokens: true,
-        tolerant : true,
-    });
+    
+    try
+    {
+        var syntax = esprima.parse(text, {
+            tolerant: true,
+            loc: true,
+            tokens: true
+        });
+    }
 
+    catch(err)
+    {
+        fs.writeFile(".\\results\\arquvivos com erro.txt", file.toString().replace(caminhoComum, "") + " erro: " + err, function(err) {
+            if(err) {
+                return console.log(err);
+            }
+        });
+
+        return;
+    }
+
+    var errors = syntax.errors;
     var linhaFinalPrograma = 0;
     var funcoes = [];
     var numeroVariaveisPrograma = 0;
@@ -269,10 +276,26 @@ function procuraFuncoes(node, funcoes)
             }
         }
 
+        else if(node.expression.arguments.length > 0) {
+            for(var i = 0; i < node.expression.arguments.length; i++) {
+                objeto = criaObjeto(node);
+
+                if(node.expression.arguments[i].type === 'FunctionExpression') {
+                    if(node.expression.arguments[i].id !== null) 
+                        objeto.funcao.nome = node.expression.arguments[i].id.name;
+                    else
+                        objeto.funcao.nome = "Função anônima";
+                
+                    objeto.nodeFuncao = node.expression.arguments[i];
+                    funcoes.push(objeto);
+                }
+            }
+         }
+
          else if(node.expression.callee) {
             if(node.expression.callee.type === 'FunctionExpression') {
                 if(node.expression.callee.id !== null) 
-                    objeto.funcao.nome = node.expression.callee.id.nome;
+                    objeto.funcao.nome = node.expression.callee.id.name;
                 else
                     objeto.funcao.nome = "Função anônima";
                 
@@ -832,19 +855,6 @@ function montaArquivoBibliotecas(file, linhaFinal, funcoes, numeroVariaveisProgr
     });
 }
 
-function getPath(s, c, n) {
-  var idx;
-  var i = 0;
-  var newS = '';
-  do {
-    idx = s.indexOf(c);
-    newS += s.substring(0, idx);
-    s = s.substring(idx+1);
-  } while (++i < n && (newS += c))
-  return newS;
-}
-
-
 function getFile(s, c, n) {
   var idx;
   var i = n;
@@ -860,12 +870,13 @@ function getFile(s, c, n) {
 
  function montaArquivoRBibliotecas(file, linhaFinalPrograma, funcoes, numeroVariaveisPrograma, nomeBiblioteca, id) {
         
+        var caminhoComum = "C:\\Users\\luisb\\Documents\\ColetaDadosJavascript";
         var infosPrograma = "";
         
-        infosPrograma = nomeBiblioteca + ";biblioteca\n" +
-                        "###;loc;" + linhaFinalPrograma + "\n" +
-                        "###;var;" + funcoes.length + "\n" +
-                        "###;func;" + numeroVariaveisPrograma + "\n";
+        infosPrograma = file.toString().replace(caminhoComum, "")+ ";" + nomeBiblioteca + ";biblioteca\n" +
+                        file.toString().replace(caminhoComum, "") + ";" + "###;loc;" + linhaFinalPrograma + "\n" +
+                        file.toString().replace(caminhoComum, "") + ";" + "###;var;" + funcoes.length + "\n" +
+                        file.toString().replace(caminhoComum, "") + ";" + "###;func;" + numeroVariaveisPrograma + "\n";
 
         var infosFuncoes = "";
         var infosEsprima = "";
@@ -875,52 +886,52 @@ function getFile(s, c, n) {
              var complexidadeCiclomatica = funcoes[i].funcao.numeroIf + funcoes[i].funcao.numeroFor + funcoes[i].funcao.numeroWhile + funcoes[i].funcao.numeroDoWhile + funcoes[i].funcao.numeroSwitchCase + funcoes[i].funcao.Conditional +1;
              var maintainability = Math.max(0, ((171 - (5.2 * Math.log(volume)) - (0.23 * (complexidadeCiclomatica)) - (16.2 * Math.log(funcoes[i].funcao.numeroLinhas)))*100) / 171);
             
-            infosFuncoes = infosFuncoes + funcoes[i].funcao.nome + ";loc;" + funcoes[i].funcao.numeroLinhas + "\n" +
-                                          funcoes[i].funcao.nome + ";var;" + funcoes[i].funcao.numeroVariaveisD + "\n" +
-                                          funcoes[i].funcao.nome + ";func;" + funcoes[i].funcao.numeroChamadas + "\n" +
-                                          funcoes[i].funcao.nome + ";cc;" + complexidadeCiclomatica + "\n" +
-                                          funcoes[i].funcao.nome + ";halstead;" + volume + "\n" +
-                                          funcoes[i].funcao.nome + ";mi;" + maintainability + "\n";
+            infosFuncoes = infosFuncoes + file.toString().replace(caminhoComum, "") + ";" + funcoes[i].funcao.nome + ";loc;" + funcoes[i].funcao.numeroLinhas + "\n" +
+                                          file.toString().replace(caminhoComum, "") + ";" + funcoes[i].funcao.nome + ";var;" + funcoes[i].funcao.numeroVariaveisD + "\n" +
+                                          file.toString().replace(caminhoComum, "") + ";" + funcoes[i].funcao.nome + ";func;" + funcoes[i].funcao.numeroChamadas + "\n" +
+                                          file.toString().replace(caminhoComum, "") + ";" + funcoes[i].funcao.nome + ";cc;" + complexidadeCiclomatica + "\n" +
+                                          file.toString().replace(caminhoComum, "") + ";" + funcoes[i].funcao.nome + ";halstead;" + volume + "\n" +
+                                          file.toString().replace(caminhoComum, "") + ";" + funcoes[i].funcao.nome + ";mi;" + maintainability + "\n";
             
-            infosEsprima = infosEsprima + funcoes[i].funcao.nome + ";AssignmentExpression;" + funcoes[i].funcao.numeroAssignment + "\n" +
-                                          funcoes[i].funcao.nome + ";ArrayExpression;" + funcoes[i].funcao.Array + "\n" +
-                                          funcoes[i].funcao.nome + ";BlockStatement;" + funcoes[i].funcao.Block + "\n" +
-                                          funcoes[i].funcao.nome + ";BinaryExpression;" + funcoes[i].funcao.Binary + "\n" +
-                                          funcoes[i].funcao.nome + ";BreakStatement;" + funcoes[i].funcao.Break + "\n" +
-                                          funcoes[i].funcao.nome + ";CallExpression;" + funcoes[i].funcao.numeroChamadas + "\n" +
-                                          funcoes[i].funcao.nome + ";CatchClause;" + funcoes[i].funcao.Catch + "\n" +
-                                          funcoes[i].funcao.nome + ";ConditionalExpression;" + funcoes[i].funcao.Conditional + "\n" +
-                                          funcoes[i].funcao.nome + ";ContinueStatement;" + funcoes[i].funcao.Continue + "\n" +
-                                          funcoes[i].funcao.nome + ";DoWhileStatement;" + funcoes[i].funcao.numeroDoWhile + "\n" +
-                                          funcoes[i].funcao.nome + ";DebuggerStatement;" + funcoes[i].funcao.Debugger + "\n" +
-                                          funcoes[i].funcao.nome + ";EmptyStatement;" + funcoes[i].funcao.Empty + "\n" +
-                                          funcoes[i].funcao.nome + ";ExpressionStatement;" + funcoes[i].funcao.Expression + "\n" +
-                                          funcoes[i].funcao.nome + ";ForStatement;" + funcoes[i].funcao.numeroFor + "\n" +
-                                          funcoes[i].funcao.nome + ";ForInStatement;" + funcoes[i].funcao.ForIn + "\n" +
-                                          funcoes[i].funcao.nome + ";FunctionDeclaration;" + funcoes[i].funcao.numeroFunctionD + "\n" +
-                                          funcoes[i].funcao.nome + ";FunctionExpression;" + funcoes[i].funcao.FunctionE + "\n" +
-                                          funcoes[i].funcao.nome + ";Identifier;" + funcoes[i].funcao.Identifier + "\n" +
-                                          funcoes[i].funcao.nome + ";IfStatement;" + funcoes[i].funcao.numeroIf + "\n" +
-                                          funcoes[i].funcao.nome + ";Literal;" + funcoes[i].funcao.Literal + "\n" +
-                                          funcoes[i].funcao.nome + ";LabeledStatement;" + funcoes[i].funcao.Label + "\n" +
-                                          funcoes[i].funcao.nome + ";LogicalExpression;" + funcoes[i].funcao.Logical + "\n" +
-                                          funcoes[i].funcao.nome + ";MemberExpression;" + funcoes[i].funcao.Member + "\n" +
-                                          funcoes[i].funcao.nome + ";NewExpression;" + funcoes[i].funcao.NewExpression + "\n" +
-                                          funcoes[i].funcao.nome + ";ObjectExpression;" + funcoes[i].funcao.Object + "\n" +
-                                          funcoes[i].funcao.nome + ";Property;" + funcoes[i].funcao.Property + "\n" +
-                                          funcoes[i].funcao.nome + ";ReturnStatement;" + funcoes[i].funcao.Return + "\n" +
-                                          funcoes[i].funcao.nome + ";SequenceExpression;" + funcoes[i].funcao.Sequence + "\n" +
-                                          funcoes[i].funcao.nome + ";SwitchStatement;" + funcoes[i].funcao.Switch + "\n" +
-                                          funcoes[i].funcao.nome + ";SwitchCase;" + funcoes[i].funcao.numeroSwitchCase + "\n" +
-                                          funcoes[i].funcao.nome + ";ThisExpression;" + funcoes[i].funcao.This + "\n" +
-                                          funcoes[i].funcao.nome + ";ThrowStatement;" + funcoes[i].funcao.Throw + "\n" +
-                                          funcoes[i].funcao.nome + ";TryStatement;" + funcoes[i].funcao.Try + "\n" +
-                                          funcoes[i].funcao.nome + ";UnaryExpression;" + funcoes[i].funcao.Unary + "\n" +
-                                          funcoes[i].funcao.nome + ";UpdateExpression;" + funcoes[i].funcao.Update + "\n" +
-                                          funcoes[i].funcao.nome + ";VariableDeclaration;" + funcoes[i].funcao.numeroVariaveis + "\n" +
-                                          funcoes[i].funcao.nome + ";VariableDeclarator;" + funcoes[i].funcao.numeroVariaveisD + "\n" +
-                                          funcoes[i].funcao.nome + ";WhileStatement;" + funcoes[i].funcao.numeroWhile + "\n" +
-                                          funcoes[i].funcao.nome + ";WithStatement;" + funcoes[i].funcao.With + "\n";
+            infosEsprima = infosEsprima + file.toString().replace(caminhoComum, "") + ";" + funcoes[i].funcao.nome + ";AssignmentExpression;" + funcoes[i].funcao.numeroAssignment + "\n" +
+                                          file.toString().replace(caminhoComum, "") + ";" + funcoes[i].funcao.nome + ";ArrayExpression;" + funcoes[i].funcao.Array + "\n" +
+                                          file.toString().replace(caminhoComum, "") + ";" + funcoes[i].funcao.nome + ";BlockStatement;" + funcoes[i].funcao.Block + "\n" +
+                                          file.toString().replace(caminhoComum, "") + ";" + funcoes[i].funcao.nome + ";BinaryExpression;" + funcoes[i].funcao.Binary + "\n" +
+                                          file.toString().replace(caminhoComum, "") + ";" + funcoes[i].funcao.nome + ";BreakStatement;" + funcoes[i].funcao.Break + "\n" +
+                                          file.toString().replace(caminhoComum, "") + ";" + funcoes[i].funcao.nome + ";CallExpression;" + funcoes[i].funcao.numeroChamadas + "\n" +
+                                          file.toString().replace(caminhoComum, "") + ";" + funcoes[i].funcao.nome + ";CatchClause;" + funcoes[i].funcao.Catch + "\n" +
+                                          file.toString().replace(caminhoComum, "") + ";" + funcoes[i].funcao.nome + ";ConditionalExpression;" + funcoes[i].funcao.Conditional + "\n" +
+                                          file.toString().replace(caminhoComum, "") + ";" + funcoes[i].funcao.nome + ";ContinueStatement;" + funcoes[i].funcao.Continue + "\n" +
+                                          file.toString().replace(caminhoComum, "") + ";" + funcoes[i].funcao.nome + ";DoWhileStatement;" + funcoes[i].funcao.numeroDoWhile + "\n" +
+                                          file.toString().replace(caminhoComum, "") + ";" + funcoes[i].funcao.nome + ";DebuggerStatement;" + funcoes[i].funcao.Debugger + "\n" +
+                                          file.toString().replace(caminhoComum, "") + ";" + funcoes[i].funcao.nome + ";EmptyStatement;" + funcoes[i].funcao.Empty + "\n" +
+                                          file.toString().replace(caminhoComum, "") + ";" + funcoes[i].funcao.nome + ";ExpressionStatement;" + funcoes[i].funcao.Expression + "\n" +
+                                          file.toString().replace(caminhoComum, "") + ";" + funcoes[i].funcao.nome + ";ForStatement;" + funcoes[i].funcao.numeroFor + "\n" +
+                                          file.toString().replace(caminhoComum, "") + ";" + funcoes[i].funcao.nome + ";ForInStatement;" + funcoes[i].funcao.ForIn + "\n" +
+                                          file.toString().replace(caminhoComum, "") + ";" + funcoes[i].funcao.nome + ";FunctionDeclaration;" + funcoes[i].funcao.numeroFunctionD + "\n" +
+                                          file.toString().replace(caminhoComum, "") + ";" + funcoes[i].funcao.nome + ";FunctionExpression;" + funcoes[i].funcao.FunctionE + "\n" +
+                                          file.toString().replace(caminhoComum, "") + ";" + funcoes[i].funcao.nome + ";Identifier;" + funcoes[i].funcao.Identifier + "\n" +
+                                          file.toString().replace(caminhoComum, "") + ";" + funcoes[i].funcao.nome + ";IfStatement;" + funcoes[i].funcao.numeroIf + "\n" +
+                                          file.toString().replace(caminhoComum, "") + ";" + funcoes[i].funcao.nome + ";Literal;" + funcoes[i].funcao.Literal + "\n" +
+                                          file.toString().replace(caminhoComum, "") + ";" + funcoes[i].funcao.nome + ";LabeledStatement;" + funcoes[i].funcao.Label + "\n" +
+                                          file.toString().replace(caminhoComum, "") + ";" + funcoes[i].funcao.nome + ";LogicalExpression;" + funcoes[i].funcao.Logical + "\n" +
+                                          file.toString().replace(caminhoComum, "") + ";" + funcoes[i].funcao.nome + ";MemberExpression;" + funcoes[i].funcao.Member + "\n" +
+                                          file.toString().replace(caminhoComum, "") + ";" + funcoes[i].funcao.nome + ";NewExpression;" + funcoes[i].funcao.NewExpression + "\n" +
+                                          file.toString().replace(caminhoComum, "") + ";" + funcoes[i].funcao.nome + ";ObjectExpression;" + funcoes[i].funcao.Object + "\n" +
+                                          file.toString().replace(caminhoComum, "") + ";" + funcoes[i].funcao.nome + ";Property;" + funcoes[i].funcao.Property + "\n" +
+                                          file.toString().replace(caminhoComum, "") + ";" + funcoes[i].funcao.nome + ";ReturnStatement;" + funcoes[i].funcao.Return + "\n" +
+                                          file.toString().replace(caminhoComum, "") + ";" + funcoes[i].funcao.nome + ";SequenceExpression;" + funcoes[i].funcao.Sequence + "\n" +
+                                          file.toString().replace(caminhoComum, "") + ";" + funcoes[i].funcao.nome + ";SwitchStatement;" + funcoes[i].funcao.Switch + "\n" +
+                                          file.toString().replace(caminhoComum, "") + ";" + funcoes[i].funcao.nome + ";SwitchCase;" + funcoes[i].funcao.numeroSwitchCase + "\n" +
+                                          file.toString().replace(caminhoComum, "") + ";" + funcoes[i].funcao.nome + ";ThisExpression;" + funcoes[i].funcao.This + "\n" +
+                                          file.toString().replace(caminhoComum, "") + ";" + funcoes[i].funcao.nome + ";ThrowStatement;" + funcoes[i].funcao.Throw + "\n" +
+                                          file.toString().replace(caminhoComum, "") + ";" + funcoes[i].funcao.nome + ";TryStatement;" + funcoes[i].funcao.Try + "\n" +
+                                          file.toString().replace(caminhoComum, "") + ";" + funcoes[i].funcao.nome + ";UnaryExpression;" + funcoes[i].funcao.Unary + "\n" +
+                                          file.toString().replace(caminhoComum, "") + ";" + funcoes[i].funcao.nome + ";UpdateExpression;" + funcoes[i].funcao.Update + "\n" +
+                                          file.toString().replace(caminhoComum, "") + ";" + funcoes[i].funcao.nome + ";VariableDeclaration;" + funcoes[i].funcao.numeroVariaveis + "\n" +
+                                          file.toString().replace(caminhoComum, "") + ";" + funcoes[i].funcao.nome + ";VariableDeclarator;" + funcoes[i].funcao.numeroVariaveisD + "\n" +
+                                          file.toString().replace(caminhoComum, "") + ";" + funcoes[i].funcao.nome + ";WhileStatement;" + funcoes[i].funcao.numeroWhile + "\n" +
+                                          file.toString().replace(caminhoComum, "") + ";" + funcoes[i].funcao.nome + ";WithStatement;" + funcoes[i].funcao.With + "\n";
         }
 
         infosBibliotecas = infosBibliotecas + "\n\n" + infosPrograma + infosFuncoes + infosEsprima;
