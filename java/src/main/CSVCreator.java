@@ -66,7 +66,7 @@ public class CSVCreator {
 				String nome = arquivo.getName().replace("." + extensao, "");
 				long tamanho = arquivo.length();
 				
-				bw.write(nome + "\t" + nomeBiblioteca + "\t" + arquivo.getAbsolutePath().replace(CAMINHO_COMUM, "").replace(arquivo.getName(), "") + "\t" + extensao + "\t" + tamanho + "\n");
+				bw.write(nome + "\t" + nomeBiblioteca + "\t" + arquivo.getAbsolutePath().replace(CAMINHO_COMUM, "").replace(arquivo.getName(), "") + "\t" + tamanho + "\n");
 				numeroArquivosLidos++;
 			}
 		}
