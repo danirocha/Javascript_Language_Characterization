@@ -39,13 +39,19 @@ var infosBibliotecas = "";
 
 var cabecalho = "caminho;biblioteca;nomeFuncao;analise;valor";
 
-if(fs.existsSync(".\\log analyzer.txt"))
-    fs.writeFileSync(".\\log analyzer.txt", fs.readFileSync(".\\log analyzer.txt") + "\n\nAnalyze for " + nomeBiblioteca + " began!");
-else
-    fs.writeFileSync(".\\log analyzer.txt", "Analyze for " + nomeBiblioteca + " began!");
 
-console.log("Analyze for " + nomeBiblioteca + " began!");
-readDirectory(dirName, nomeBiblioteca, id);
+if(fs.existsSync(dirName)){
+    if(fs.existsSync(".\\log analyzer.txt"))
+        fs.writeFileSync(".\\log analyzer.txt", fs.readFileSync(".\\log analyzer.txt") + "\n\nAnalyze for " + nomeBiblioteca + " began!");
+    else
+        fs.writeFileSync(".\\log analyzer.txt", "Analyze for " + nomeBiblioteca + " began!");
+
+    console.log("Analyze for " + nomeBiblioteca + " began!");
+    readDirectory(dirName, nomeBiblioteca, id);
+}
+
+else
+    console.log("Pasta " + dirName + " nao existe")
 
 function escreveArquivo() {
     var pasta = ".\\results\\" + (id%1000);
@@ -284,7 +290,7 @@ function procuraFuncoes(node, funcoes)
         if(node.id)
             objeto.funcao.nome = node.id.name;
         else
-            objeto.funcao.nome = "Função anônima " + funcoesSemNome;
+            objeto.funcao.nome = "Funcao Anonima " + funcoesSemNome;
 
         objeto.nodeFuncao = node;
         funcoes.push(objeto);
@@ -335,7 +341,7 @@ function procuraFuncoes(node, funcoes)
                         if(node.expression.arguments[i].id !== null) 
                             objeto.funcao.nome = node.expression.arguments[i].id.name;
                         else {
-                            objeto.funcao.nome = "Função anônima " + funcoesSemNome;
+                            objeto.funcao.nome = "Funcao Anonima " + funcoesSemNome;
                             funcoesSemNome = funcoesSemNome + 1;
                         }
                     
@@ -351,7 +357,7 @@ function procuraFuncoes(node, funcoes)
                 if(node.expression.callee.id !== null) 
                     objeto.funcao.nome = node.expression.callee.id.name;
                 else {
-                    objeto.funcao.nome = "Função anônima " + funcoesSemNome;
+                    objeto.funcao.nome = "Funcao Anonima " + funcoesSemNome;
                     funcoesSemNome = funcoesSemNome + 1;
                 }
                 
@@ -953,9 +959,9 @@ function getFile(s, c, n) {
         var caminhoComum = "C:\\Users\\luisb\\Documents\\ColetaDadosJavascript";
         var infosPrograma = "";
         
-        infosPrograma = file.toString().replace(caminhoComum, "") + ";" + nomeBiblioteca + ";###;loc;" + linhaFinalPrograma + "\n" +
-                        file.toString().replace(caminhoComum, "") + ";" + nomeBiblioteca + ";###;numFunc;" + funcoes.length + "\n" +
-                        file.toString().replace(caminhoComum, "") + ";" + nomeBiblioteca + ";###;variaveis;" + numeroVariaveisPrograma + "\n";
+        infosPrograma = file.toString().replace(caminhoComum, "") + ";" + nomeBiblioteca + ";---;loc;" + linhaFinalPrograma + "\n" +
+                        file.toString().replace(caminhoComum, "") + ";" + nomeBiblioteca + ";---;numFunc;" + funcoes.length + "\n" +
+                        file.toString().replace(caminhoComum, "") + ";" + nomeBiblioteca + ";---;variaveis;" + numeroVariaveisPrograma + "\n";
 
         var infosFuncoes = "";
         var infosEsprima = "";

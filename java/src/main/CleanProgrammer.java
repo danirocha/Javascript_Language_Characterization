@@ -6,7 +6,7 @@ import java.util.regex.Pattern;
 
 public class CleanProgrammer {
 	
-	private String[] regexes = {".*\\.js$"};
+	private String[] regexes = {".*_min\\.js$", ".*-min\\.js$"};
 	
 	private int arquivosDeletados = 0;
 	
@@ -16,23 +16,26 @@ public class CleanProgrammer {
 		
 		File arquivos[] = diretorioLido.listFiles();
 		
+		if(arquivos.length == 0)
+			diretorioLido.delete();
+				
 		for(int i = 0; i < arquivos.length; i++){
 			
 			File arquivo = arquivos[i];
 			
-			if(arquivo.isDirectory()) {
+			if(arquivo.isDirectory()) {				
 				cleanDirectories(arquivo.getAbsolutePath());
 			}
 		   
 			else if (arquivo.isFile()) {
-				boolean deleta = true;
+				boolean deleta = false;
 				
 				for(int j = 0; j < regexes.length; j++) {
 					Pattern pattern = Pattern.compile(regexes[j]);
 					Matcher matcher = pattern.matcher(arquivo.getName());					
 					
 					if(matcher.find()) {
-						deleta = false;
+						deleta = true;
 						break;
 					}
 				}
