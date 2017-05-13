@@ -2,7 +2,6 @@ var fs = require('fs');
 var path = require('path');
 var esprima = require('esprima');
 var estraverse = require('estraverse');
-var tableN = require('ascii-data-table').default;
 
 const args = process.argv;
 
@@ -39,19 +38,7 @@ var infosBibliotecas = "";
 
 var cabecalho = "caminho;biblioteca;nomeFuncao;analise;valor";
 
-
-if(fs.existsSync(dirName)){
-    if(fs.existsSync(".\\log analyzer.txt"))
-        fs.writeFileSync(".\\log analyzer.txt", fs.readFileSync(".\\log analyzer.txt") + "\n\nAnalyze for " + nomeBiblioteca + " began!");
-    else
-        fs.writeFileSync(".\\log analyzer.txt", "Analyze for " + nomeBiblioteca + " began!");
-
-    console.log("Analyze for " + nomeBiblioteca + " began!");
-    readDirectory(dirName, nomeBiblioteca, id);
-}
-
-else
-    console.log("Pasta " + dirName + " nao existe")
+readDirectory(dirName, nomeBiblioteca, id);
 
 function escreveArquivo() {
     var pasta = ".\\results\\" + (id%1000);
@@ -64,21 +51,12 @@ function escreveArquivo() {
 
     if(fs.existsSync(arquivo))
     {
-       fs.writeFile(pasta + "\\" + nomeBiblioteca + " R.txt", infosBibliotecas, function(err) {
-            if(err) {
-                return console.log(err);
-            }
-        });
-
+        fs.writeFileSync(pasta + "\\" + nomeBiblioteca + " R.txt", infosBibliotecas);
         return;
     }
 
-    infosBibliotecas = cabecalho + "\n" + infosBibliotecas 
-    fs.writeFile(pasta + "\\" + nomeBiblioteca + " R.txt", infosBibliotecas, function(err) {
-            if(err) {
-                return console.log(err);
-            }
-        });
+    infosBibliotecas = cabecalho + "\n" + infosBibliotecas; 
+    fs.writeFileSync(pasta + "\\" + nomeBiblioteca + " R.txt", infosBibliotecas);
 }
 
 function readDirectory(dirName, nomeBiblioteca, id) {
@@ -104,7 +82,12 @@ function readFiles(dirName, files, nomeBiblioteca, id) {
             
                 var text = logData.toString();
 
-                fs.writeFileSync(".\\log analyzer.txt", fs.readFileSync(".\\log analyzer.txt") + "\nAnalyzing file " +  getFile(file.toString(), "\\", file.toString().match(/\\/gi).length));
+                if(fs.existsSync(".\\log analyzer.txt"))
+                    fs.writeFileSync(".\\log analyzer.txt", fs.readFileSync(".\\log analyzer.txt") + "\nAnalyzing file " +  getFile(file.toString(), "\\", file.toString().match(/\\/gi).length));
+                else
+                    fs.writeFileSync(".\\log analyzer.txt", "Analyzing file " +  getFile(file.toString(), "\\", file.toString().match(/\\/gi).length));
+
+                
                 console.log("Analyzing file " +  getFile(file.toString(), "\\", file.toString().match(/\\/gi).length));
 
                 esprimaParse(text, file, nomeBiblioteca, id);
@@ -131,19 +114,11 @@ function esprimaParse(text, file, nomeBiblioteca, id) {
         {
             var texto = fs.readFileSync(".\\results\\arquvivos com erro.txt");
 
-             fs.writeFile(".\\results\\arquvivos com erro.txt", texto + "\n" + file.toString() + " erro: " + err, function(err) {
-                if(err) {
-                    return console.log(err);
-                }
-            });
+             fs.writeFileSync(".\\results\\arquvivos com erro.txt", texto + "\n" + file.toString() + " erro: " + err);
         }
 
         else {
-            fs.writeFile(".\\results\\arquvivos com erro.txt", file.toString() + " erro: " + err, function(err) {
-                if(err) {
-                    return console.log(err);
-                }
-            });
+            fs.writeFileSync(".\\results\\arquvivos com erro.txt", file.toString() + " erro: " + err);
         }
 
         return;
@@ -154,13 +129,13 @@ function esprimaParse(text, file, nomeBiblioteca, id) {
     var funcoes = [];
     var numeroVariaveisPrograma = 0;
     var linhaFinalFuncao = 0;
-     var soma = 0;
-     funcoesSemNome = 1;
-
+    var soma = 0;
+    funcoesSemNome = 1;
+    
     estraverse.traverse(syntax, {
         enter: function(node) {
 
-            procuraFuncoes(node, funcoes);
+            procuraFuncoes(node, funcoes, syntax);
 
             linhaFinalPrograma = contaLinhas(node,linhaFinalPrograma);
 
@@ -170,14 +145,9 @@ function esprimaParse(text, file, nomeBiblioteca, id) {
     });
 
     for(var i = 0; i < funcoes.length; i++)
-    {
-        
         linhaFinalFuncao = contaFuncoes(funcoes[i].nodeFuncao,funcoes[i].funcao,linhaFinalFuncao, i, funcoes);
-    };
 
     calculaOperandos(syntax.tokens, funcoes);
-
-    //montaArquivoBibliotecas(file,linhaFinalPrograma,funcoes,numeroVariaveisPrograma, nomeBiblioteca);
 
     montaArquivoRBibliotecas(file, linhaFinalPrograma, funcoes, numeroVariaveisPrograma, nomeBiblioteca);
 }
@@ -185,8 +155,6 @@ function esprimaParse(text, file, nomeBiblioteca, id) {
 function calculaOperandos(tokens, funcoes)
 {
     for(var i = 0; i < funcoes.length; i++) {
-        
-        
         if(funcoes[i].funcao.funcaoPai === -1)
         {
             var tokenInicio = 0;
@@ -281,176 +249,34 @@ function classificaToken(i, funcao, tokens) {
     }
 }
 
-function procuraFuncoes(node, funcoes)
+function funcaoExistente(objeto, funcoes) {
+    for(var i = 0; i < funcoes.length; i++) {
+        if(funcoes[i].nodeFuncao === objeto.nodeFuncao)
+            return true;
+    }
+
+    return false;
+}
+
+function procuraFuncoes(node, funcoes, syntax)
 {
-    if(node.type === 'FunctionDeclaration')
-    {    
+    if(node.type === 'FunctionDeclaration' || node.type === 'FunctionExpression')
+    { 
         var objeto = criaObjeto(node);
 
         if(node.id)
             objeto.funcao.nome = node.id.name;
-        else
+
+        else {
             objeto.funcao.nome = "Funcao Anonima " + funcoesSemNome;
+            funcoesSemNome++;
+        }
 
         objeto.nodeFuncao = node;
-        funcoes.push(objeto);
-    }
 
-    else if(node.type === 'ExpressionStatement')
-    {
-        var objeto = criaObjeto(node);
-
-        if(node.expression.left && node.expression.right)
-        {
-            if(node.expression.left.object && node.expression.left.property)
-            {
-                if(node.expression.right.type === 'FunctionExpression')
-                {
-                    if(node.expression.left.object.object)
-                    {
-                        objeto.funcao.nome = node.expression.left.object.object.name + "." + node.expression.left.object.property.name + "." + node.expression.left.property.name;
-                        objeto.nodeFuncao = node.expression.right;
-                        funcoes.push(objeto);
-                    }
-
-                    else {
-                        objeto.funcao.nome = node.expression.left.object.name + "." + node.expression.left.property.name;
-                        objeto.nodeFuncao = node.expression.right;
-                        funcoes.push(objeto);
-                    }
-                }
-            }
-
-            else
-            {
-                if(node.expression.right.type === 'FunctionExpression')
-                {
-                    objeto.funcao.nome = node.expression.left.name;
-                    objeto.nodeFuncao = node.expression.right;
-                    funcoes.push(objeto);
-                }
-            }
-        }
-
-        else if(node.expression.arguments) {
-            if(node.expression.arguments.length > 0) {
-                for(var i = 0; i < node.expression.arguments.length; i++) {
-                    objeto = criaObjeto(node);
-
-                    if(node.expression.arguments[i].type === 'FunctionExpression') {
-                        if(node.expression.arguments[i].id !== null) 
-                            objeto.funcao.nome = node.expression.arguments[i].id.name;
-                        else {
-                            objeto.funcao.nome = "Funcao Anonima " + funcoesSemNome;
-                            funcoesSemNome = funcoesSemNome + 1;
-                        }
-                    
-                        objeto.nodeFuncao = node.expression.arguments[i];
-                        funcoes.push(objeto);
-                    }
-                }
-            }
-        }
-
-         else if(node.expression.callee) {
-            if(node.expression.callee.type === 'FunctionExpression') {
-                if(node.expression.callee.id !== null) 
-                    objeto.funcao.nome = node.expression.callee.id.name;
-                else {
-                    objeto.funcao.nome = "Funcao Anonima " + funcoesSemNome;
-                    funcoesSemNome = funcoesSemNome + 1;
-                }
-                
-                objeto.nodeFuncao = node.expression.callee;
-                funcoes.push(objeto);
-            }
-         }
-    }
-
-    else if(node.type === 'VariableDeclaration')
-    {
-        for(var i = 0; i < node.declarations.length; i++)
-        {
-            if(node.declarations[i].type === 'VariableDeclarator')
-            {
-                if(node.declarations[i].init)
-                {
-                    if(node.declarations[i].init.type === 'FunctionExpression')
-                    {
-                         var objeto = criaObjeto(node);
-
-                        if(node.declarations[i].init.id === null)
-                        {
-                            objeto.funcao.nome = node.declarations[i].id.name;
-                            objeto.nodeFuncao = node.declarations[i].init;
-                            funcoes.push(objeto);
-                        }
-
-                        else
-                        {
-                            objeto.funcao.nome = node.declarations[i].init.id.name;
-                            objeto.nodeFuncao = node.declarations[i].init;
-                            funcoes.push(objeto);
-                        }
-                    }
-
-                    else if(node.declarations[i].init.type === 'CallExpression')
-                    {
-                        var objeto = criaObjeto(node);
-
-                        if(node.declarations[i].init.callee.type === 'FunctionExpression')
-                        {
-                            objeto.funcao.nome = node.declarations[i].id.name;
-                            objeto.nodeFuncao = node.declarations[i].init.callee;
-                            funcoes.push(objeto);
-                        }                  
-                    }
-
-                    else if(node.declarations[i].init.type === 'NewExpression')
-                    {
-                         var objeto = criaObjeto(node);
-
-                        if(node.declarations[i].init.callee.type === 'FunctionExpression')
-                        {
-                            objeto.funcao.nome = node.declarations[i].id.name;
-                            objeto.nodeFuncao = node.declarations[i].init.callee;
-                            funcoes.push(objeto);
-                        }    
-                    }
-
-                    else if(node.declarations[i].init.type === 'ArrowFunctionExpression')
-                    {
-                        var objeto = criaObjeto(node);
-                        
-                        if(node.declarations[i].init.callee) {
-                            if(node.declarations[i].init.callee.type === 'FunctionExpression')
-                            {
-                                objeto.funcao.nome = node.declarations[i].id.name;
-                                objeto.nodeFuncao = node.declarations[i].init.callee;
-                                funcoes.push(objeto);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    else if(node.type === 'ObjectExpression') {
-        if(node.properties.length > 0) {
-            for(var i = 0; i < node.properties.length; i++) {
-                if(node.properties[i].type === 'Property') {
-                    if(node.properties[i].key && node.properties[i].value) {
-                        if(node.properties[i].value.type === 'FunctionExpression') {
-                            var objeto = criaObjeto(node);
-
-                            objeto.funcao.nome = node.properties[i].key.name;
-                            objeto.nodeFuncao = node.properties[i].value;
-                            funcoes.push(objeto);
-                        }
-                    }
-                }
-            }
+        if(!funcaoExistente(objeto, funcoes)) {
+            funcoes.push(objeto);
+            return;
         }
     }
 }
@@ -466,7 +292,7 @@ function criaObjeto(node) {
                   Throw: 0, Try: 0, Unary: 0, Update: 0,
                   numeroVariaveis: 0, numeroVariaveisD: 0, numeroWhile: 0, With: 0, 
                   operandosTotal: 0, operadoresTotal: 0,
-                  operandos: [], operadores: []
+                  operandos: [], operadores: [], funcoesFilhas: []
                 };
     
         var objeto = {funcao: funcao, nodeFuncao: node, nodeInicial: node};
@@ -573,10 +399,8 @@ function contaVariaveis(node) {
 }
 
 
-function checarFilhos(funcoes,i,escolha) {
+function checarFilhos(funcoes,i) {
     var j = i+1;
-    var count = 0;
-    var filhos = 0;
 
     while(j < funcoes.length) {
         if(funcoes[j].funcao.funcaoPai === 1) {
@@ -585,360 +409,279 @@ function checarFilhos(funcoes,i,escolha) {
             
             else {
                 if(funcoes[j].nodeFuncao.loc.end.line < funcoes[i].nodeFuncao.loc.end.line) {
-                    count++;
-                    filhos = checarFilhos(funcoes, j, escolha);
+                    if(!verificaFilhoExistente(j, i, funcoes)){
+                        checarFilhos(funcoes, j);
+                        funcoes[i].funcao.funcoesFilhas.push(j);
+                    }
                 }
+
                 j++;
+
             }
         }
 
         else {
-            if(funcoes[j].nodeFuncao.loc.end.line < funcoes[i].nodeFuncao.loc.end.line)
-                count++;
+            if(funcoes[j].nodeFuncao.loc.end.line < funcoes[i].nodeFuncao.loc.end.line){
+                if(!verificaFilhoExistente(j, i, funcoes))
+                 funcoes[i].funcao.funcoesFilhas.push(j);
+            }
 
                 j++;
         }
     }
+}
 
-    filhos = count;
+function refatoraDados(funcaoPai, funcaoFilha, escolha) {
 
-    while(count > 0)
+    if(escolha === 0)
+        funcaoPai.numeroAssignment = funcaoFilha.numeroAssignment;
+
+    else if (escolha === 1)
     {
-        
-        if(escolha === 0)
-        {
-            funcoes[i].funcao.numeroAssignment = funcoes[i].funcao.numeroAssignment - funcoes[i+count].funcao.numeroAssignment;
-            count--;
-        }
-
-        else if (escolha === 1)
-        {
-            funcoes[i].funcao.Array = funcoes[i].funcao.Array - funcoes[i+count].funcao.Array;
-            count--;
-        }
-
-        else if(escolha === 2)
-        {
-            funcoes[i].funcao.Block = funcoes[i].funcao.Block - funcoes[i+count].funcao.Block;
-            count--;
-        }
-
-        else if(escolha === 3)
-        {
-            funcoes[i].funcao.Binary = funcoes[i].funcao.Binary - funcoes[i+count].funcao.Binary;
-            count--;
-        }
-
-        else if(escolha === 4)
-        {
-            funcoes[i].funcao.Break = funcoes[i].funcao.Break - funcoes[i+count].funcao.Break;
-            count--;
-        }
-
-        else if(escolha === 5)
-        {
-            funcoes[i].funcao.numeroChamadas = funcoes[i].funcao.numeroChamadas - funcoes[i+count].funcao.numeroChamadas;
-            count--;
-        }
-
-        else if(escolha === 6)
-        {
-            funcoes[i].funcao.Catch = funcoes[i].funcao.Catch - funcoes[i+count].funcao.Catch;
-            count--;
-        }
-
-        else if(escolha === 7)
-        {
-            funcoes[i].funcao.Conditional = funcoes[i].funcao.Conditional - funcoes[i+count].funcao.Conditional;
-            count--;
-        }
-
-        else if(escolha === 8)
-        {
-            funcoes[i].funcao.Continue = funcoes[i].funcao.Continue - funcoes[i+count].funcao.Continue;
-            count--;
-        }
-
-        else if(escolha === 9)
-        {
-            funcoes[i].funcao.numeroDoWhile = funcoes[i].funcao.numeroDoWhile - funcoes[i+count].funcao.numeroDoWhile;
-            count--;
-        }
-
-        else if(escolha === 10)
-        {
-            funcoes[i].funcao.Debugger = funcoes[i].funcao.Debugger - funcoes[i+count].funcao.Debugger;
-            count--;
-        }
-
-        else if(escolha === 11)
-        {
-            funcoes[i].funcao.Empty = funcoes[i].funcao.Empty - funcoes[i+count].funcao.Empty;
-            count--;
-        }
-
-        else if(escolha === 12)
-        {
-            funcoes[i].funcao.Expression = funcoes[i].funcao.Expression - funcoes[i+count].funcao.Expression;
-            count--;
-        }
-
-        else if(escolha === 13)
-        {
-            funcoes[i].funcao.numeroFor = funcoes[i].funcao.numeroFor - funcoes[i+count].funcao.numeroFor;
-            count--;
-        }
-
-        else if(escolha === 14)
-        {
-            funcoes[i].funcao.ForIn = funcoes[i].funcao.ForIn - funcoes[i+count].funcao.ForIn;
-            count--;
-        }
-
-        else if(escolha === 15)
-        {
-            funcoes[i].funcao.numeroFunctionD = funcoes[i].funcao.numeroFunctionD - funcoes[i+count].funcao.numeroFunctionD;
-            count--;
-        }
-
-        else if(escolha === 16)
-        {
-            funcoes[i].funcao.FunctionE = funcoes[i].funcao.FunctionE - funcoes[i+count].funcao.FunctionE;
-            count--;
-        }
-
-        else if(escolha === 17)
-        {
-            funcoes[i].funcao.Identifier = funcoes[i].funcao.Identifier - funcoes[i+count].funcao.Identifier;
-            count--;
-        }
-
-        else if(escolha === 18)
-        {
-            funcoes[i].funcao.numeroIf = funcoes[i].funcao.numeroIf - funcoes[i+count].funcao.numeroIf;
-            count--;
-        }
-
-        else if(escolha === 19)
-        {
-            funcoes[i].funcao.Literal = funcoes[i].funcao.Literal - funcoes[i+count].funcao.Literal;
-            count--;
-        }
-
-        else if(escolha === 20)
-        {
-            funcoes[i].funcao.Label = funcoes[i].funcao.Label - funcoes[i+count].funcao.Label;
-            count--;
-        }
-
-        else if(escolha === 21)
-        {
-            funcoes[i].funcao.Logical = funcoes[i].funcao.Logical - funcoes[i+count].funcao.Logical;
-            count--;
-        }
-
-        else if(escolha === 22)
-        {
-            funcoes[i].funcao.Member = funcoes[i].funcao.Member - funcoes[i+count].funcao.Member;
-            count--;
-        }
-
-        else if(escolha === 23)
-        {
-            funcoes[i].funcao.NewExpression = funcoes[i].funcao.NewExpression - funcoes[i+count].funcao.NewExpression;
-            count--;
-        }
-
-        else if(escolha === 24)
-        {
-            funcoes[i].funcao.Object = funcoes[i].funcao.Object - funcoes[i+count].funcao.Object;
-            count--;
-        }
-
-        else if(escolha === 25)
-        {
-            funcoes[i].funcao.Property = funcoes[i].funcao.Property - funcoes[i+count].funcao.Property;
-            count--;
-        }
-
-        else if(escolha === 26)
-        {
-            funcoes[i].funcao.Return = funcoes[i].funcao.Return - funcoes[i+count].funcao.Return;
-            count--;
-        }
-
-        else if(escolha === 27)
-        {
-            funcoes[i].funcao.Sequence = funcoes[i].funcao.Sequence - funcoes[i+count].funcao.Sequence;
-            count--;
-        }
-
-        else if(escolha === 28)
-        {
-            funcoes[i].funcao.Switch = funcoes[i].funcao.Switch - funcoes[i+count].funcao.Switch;
-            count--;
-        }
-
-        else if(escolha === 29)
-        {
-            funcoes[i].funcao.numeroSwitchCase = funcoes[i].funcao.numeroSwitchCase - funcoes[i+count].funcao.numeroSwitchCase;
-            count--;
-        }
-
-        else if(escolha === 30)
-        {
-            funcoes[i].funcao.This = funcoes[i].funcao.This - funcoes[i+count].funcao.This;
-            count--;
-        }
-
-        else if(escolha === 31)
-        {
-            funcoes[i].funcao.Throw = funcoes[i].funcao.Throw - funcoes[i+count].funcao.Throw;
-            count--;
-        }
-
-        else if(escolha === 32)
-        {
-            funcoes[i].funcao.Try = funcoes[i].funcao.Try - funcoes[i+count].funcao.Try;
-            count--;
-        }
-
-        else if(escolha === 33)
-        {
-            funcoes[i].funcao.Unary = funcoes[i].funcao.Unary - funcoes[i+count].funcao.Unary;
-            count--;
-        }
-
-        else if(escolha === 34)
-        {
-            funcoes[i].funcao.Update = funcoes[i].funcao.Update - funcoes[i+count].funcao.Update;
-            count--;
-        }
-
-        else if(escolha === 35)
-        {
-            funcoes[i].funcao.numeroVariaveis = funcoes[i].funcao.numeroVariaveis - funcoes[i+count].funcao.numeroVariaveis;
-            count--;
-        }
-
-        else if(escolha === 36)
-        {
-            funcoes[i].funcao.numeroVariaveisD = funcoes[i].funcao.numeroVariaveisD - funcoes[i+count].funcao.numeroVariaveisD;
-            count--;
-        }
-
-        else if(escolha === 37)
-        {
-            funcoes[i].funcao.numeroWhile = funcoes[i].funcao.numeroWhile - funcoes[i+count].funcao.numeroWhile;
-            count--;
-        }
-
-        else if(escolha === 38)
-        {
-            funcoes[i].funcao.With = funcoes[i].funcao.With - funcoes[i+count].funcao.With;
-            count--;
-        }
+        funcaoPai.Array = funcaoPai.Array - funcaoFilha.Array;
     }
 
-    return filhos;
+    else if(escolha === 2)
+    {
+        funcaoPai.Block = funcaoPai.Block - funcaoFilha.Block;
+        
+    }
+
+    else if(escolha === 3)
+    {
+        funcaoPai.Binary = funcaoPai.Binary - funcaoFilha.Binary;
+        
+    }
+
+    else if(escolha === 4)
+    {
+        funcaoPai.Break = funcaoPai.Break - funcaoFilha.Break;
+        
+    }
+
+    else if(escolha === 5)
+    {
+        funcaoPai.numeroChamadas = funcaoPai.numeroChamadas - funcaoFilha.numeroChamadas;
+        
+    }
+
+    else if(escolha === 6)
+    {
+        funcaoPai.Catch = funcaoPai.Catch - funcaoFilha.Catch;
+        
+    }
+
+    else if(escolha === 7)
+    {
+        funcaoPai.Conditional = funcaoPai.Conditional - funcaoFilha.Conditional;
+        
+    }
+
+    else if(escolha === 8)
+    {
+        funcaoPai.Continue = funcaoPai.Continue - funcaoFilha.Continue;
+        
+    }
+
+    else if(escolha === 9)
+    {
+        funcaoPai.numeroDoWhile = funcaoPai.numeroDoWhile - funcaoFilha.numeroDoWhile;
+        
+    }
+
+    else if(escolha === 10)
+    {
+        funcaoPai.Debugger = funcaoPai.Debugger - funcaoFilha.Debugger;
+        
+    }
+
+    else if(escolha === 11)
+    {
+        funcaoPai.Empty = funcaoPai.Empty - funcaoFilha.Empty;
+        
+    }
+
+    else if(escolha === 12)
+    {
+        funcaoPai.Expression = funcaoPai.Expression - funcaoFilha.Expression;
+        
+    }
+
+    else if(escolha === 13)
+    {
+        funcaoPai.numeroFor = funcaoPai.numeroFor - funcaoFilha.numeroFor;
+        
+    }
+
+    else if(escolha === 14)
+    {
+        funcaoPai.ForIn = funcaoPai.ForIn - funcaoFilha.ForIn;
+        
+    }
+
+    else if(escolha === 15)
+    {
+        funcaoPai.numeroFunctionD = funcaoPai.numeroFunctionD - funcaoFilha.numeroFunctionD;
+        
+    }
+
+    else if(escolha === 16)
+    {
+        funcaoPai.FunctionE = funcaoPai.FunctionE - funcaoFilha.FunctionE;
+        
+    }
+
+    else if(escolha === 17)
+    {
+        funcaoPai.Identifier = funcaoPai.Identifier - funcaoFilha.Identifier;
+        
+    }
+
+    else if(escolha === 18)
+    {
+        funcaoPai.numeroIf = funcaoPai.numeroIf - funcaoFilha.numeroIf;
+        
+    }
+
+    else if(escolha === 19)
+    {
+        funcaoPai.Literal = funcaoPai.Literal - funcaoFilha.Literal;
+        
+    }
+
+    else if(escolha === 20)
+    {
+        funcaoPai.Label = funcaoPai.Label - funcaoFilha.Label;
+        
+    }
+
+    else if(escolha === 21)
+    {
+        funcaoPai.Logical = funcaoPai.Logical - funcaoFilha.Logical;
+        
+    }
+
+    else if(escolha === 22)
+    {
+        funcaoPai.Member = funcaoPai.Member - funcaoFilha.Member;
+        
+    }
+
+    else if(escolha === 23)
+    {
+        funcaoPai.NewExpression = funcaoPai.NewExpression - funcaoFilha.NewExpression;
+        
+    }
+
+    else if(escolha === 24)
+    {
+        funcaoPai.Object = funcaoPai.Object - funcaoFilha.Object;
+        
+    }
+
+    else if(escolha === 25)
+    {
+        funcaoPai.Property = funcaoPai.Property - funcaoFilha.Property;
+        
+    }
+
+    else if(escolha === 26)
+    {
+        funcaoPai.Return = funcaoPai.Return - funcaoFilha.Return;
+        
+    }
+
+    else if(escolha === 27)
+    {
+        funcaoPai.Sequence = funcaoPai.Sequence - funcaoFilha.Sequence;
+        
+    }
+
+    else if(escolha === 28)
+    {
+        funcaoPai.Switch = funcaoPai.Switch - funcaoFilha.Switch;
+        
+    }
+
+    else if(escolha === 29)
+    {
+        funcaoPai.numeroSwitchCase = funcaoPai.numeroSwitchCase - funcaoFilha.numeroSwitchCase;
+        
+    }
+
+    else if(escolha === 30)
+    {
+        funcaoPai.This = funcaoPai.This - funcaoFilha.This;
+        
+    }
+
+    else if(escolha === 31)
+    {
+        funcaoPai.Throw = funcaoPai.Throw - funcaoFilha.Throw;
+        
+    }
+
+    else if(escolha === 32)
+    {
+        funcaoPai.Try = funcaoPai.Try - funcaoFilha.Try;
+        
+    }
+
+    else if(escolha === 33)
+    {
+        funcaoPai.Unary = funcaoPai.Unary - funcaoFilha.Unary;
+        
+    }
+
+    else if(escolha === 34)
+    {
+        funcaoPai.Update = funcaoPai.Update - funcaoFilha.Update;
+        
+    }
+
+    else if(escolha === 35)
+    {
+        funcaoPai.numeroVariaveis = funcaoPai.numeroVariaveis - funcaoFilha.numeroVariaveis;
+        
+    }
+
+    else if(escolha === 36)
+    {
+        funcaoPai.numeroVariaveisD = funcaoPai.numeroVariaveisD - funcaoFilha.numeroVariaveisD;
+        
+    }
+
+    else if(escolha === 37)
+    {
+        funcaoPai.numeroWhile = funcaoPai.numeroWhile - funcaoFilha.numeroWhile;
+        
+    }
+
+    else if(escolha === 38)
+    {
+        funcaoPai.With = funcaoPai.With - funcaoFilha.With;
+        
+    }
+}
+
+function verificaFilhoExistente(indiceFilha, indiceAtual, funcoes) {
+
+    for(var i = 0; i < funcoes[indiceAtual].funcao.funcoesFilhas.length; i++) {
+         if(funcoes[indiceAtual].funcao.funcoesFilhas[i] == indiceFilha)
+                return true;
+
+       else if(funcoes[funcoes[indiceAtual].funcao.funcoesFilhas[i]].funcao.funcoesFilhas.length > 0)
+            if(verificaFilhoExistente(indiceFilha, funcoes[indiceAtual].funcao.funcoesFilhas[i], funcoes))
+                return true;
+    }
+
+    return false;
 }
 
  function contaNos(node, noEsprima, j) 
  {
      if(node.type === noEsprima)
         quantidadeNosEsprimas[j]++;
-}
-
-function montaArquivoBibliotecas(file, linhaFinal, funcoes, numeroVariaveisPrograma, soma, nomeBiblioteca) {
-    
-    var infosPrograma = "";
-    var infosFuncoes = "";
-    var infosNosEsprima = "";
-    var numeroVariaveisFuncoes = 0;
-    var numeroLinhasFuncoes = 0;
-
-    infosPrograma = infosPrograma + "---------------------------------------------------------------------\n"
-                  + "INFORMATION ABOUT THE PROGRAM\r\n"
-                  + "   Total lines of code of " + file.substr(+4) + " file = " + linhaFinal + "\n"
-                  + "   Total number of functions of  " + file.substr(+4) + " file = " + funcoes.length + "\n"
-                  + "   Total of var in file " + file.substr(+4) + " = " + numeroVariaveisPrograma + "\n"
-                  + "---------------------------------------------------------------------\n";
-
-    var rowsFuncoes = [['nome', 'LOC', 'variaveis', 'chamada de funcoes', 'complexidade ciclomatica  (if, for, while, do...While, switch cases)', 'Volume Halstead', 'MI']];
-
-    var rowsNosEsprimas = [['nome','AssignmentExpression', 'ArrayExpression', 'BlockStatement', 'BinaryExpression' ,'BreakStatement',
-                            'CallExpression', 'CatchClause', 'ConditionalExpression', 'ContinueStatement', 'DoWhileStatement',
-                            'DebuggerStatement', 'EmptyStatement', 'ExpressionStatement', 'ForStatement', 'ForInStatement',
-                            'FunctionDeclaration', 'FunctionExpression', 'Identifier', 'IfStatement', 'Literal', 'LabeledStatement',
-                            'LogicalExpression', 'MemberExpression', 'NewExpression', 'ObjectExpression', 'Property',
-                            'ReturnStatement', 'SequenceExpression', 'SwitchStatement', 'SwitchCase', 'ThisExpression',
-                            'ThrowStatement', 'TryStatement', 'UnaryExpression', 'UpdateExpression', 'VariableDeclaration',
-                            'VariableDeclarator', 'WhileStatement', 'WithStatement']];
-
-    for (var i = 0; i < funcoes.length; i++) {
-        
-        
-        if(funcoes[i].funcao.funcaoPai === 1 && funcoes[i].funcao.funcaoFilho === -1)
-        {
-            for(var j = 0; j < 39; j++)
-                checarFilhos(funcoes,i,j);
-        }
-        
-        var volume = (funcoes[i].funcao.operandosTotal + funcoes[i].funcao.operadoresTotal ) * Math.log2(funcoes[i].funcao.operadores.length + funcoes[i].funcao.operandos.length);
-        var complexidadeCiclomatica = funcoes[i].funcao.numeroIf + funcoes[i].funcao.numeroFor + funcoes[i].funcao.numeroWhile + funcoes[i].funcao.numeroDoWhile + funcoes[i].funcao.numeroSwitchCase + funcoes[i].funcao.Conditional + 1;
-        var maintainability = Math.max(0, ((171 - (5.2 * Math.log(volume)) - (0.23 * (complexidadeCiclomatica)) - (16.2 * Math.log(funcoes[i].funcao.numeroLinhas)))*100) / 171);
-
-        rowsFuncoes.push([funcoes[i].funcao.nome, funcoes[i].funcao.numeroLinhas, funcoes[i].funcao.numeroVariaveisD, 
-                   funcoes[i].funcao.numeroChamadas, complexidadeCiclomatica, "(" + funcoes[i].funcao.operandosTotal + "+" + funcoes[i].funcao.operadoresTotal + ") * log2" + "(" + funcoes[i].funcao.operandos.length + "+" + funcoes[i].funcao.operadores.length + ") = " + volume, maintainability]);
-           
-        rowsNosEsprimas.push([funcoes[i].funcao.nome, funcoes[i].funcao.numeroAssignment, funcoes[i].funcao.Array, funcoes[i].funcao.Block, funcoes[i].funcao.Binary, funcoes[i].funcao.Break, 
-                              funcoes[i].funcao.numeroChamadas, funcoes[i].funcao.Catch, funcoes[i].funcao.Conditional, funcoes[i].funcao.Continue, funcoes[i].funcao.numeroDoWhile,
-                              funcoes[i].funcao.Debugger, funcoes[i].funcao.Empty, funcoes[i].funcao.Expression, funcoes[i].funcao.numeroFor, funcoes[i].funcao.ForIn,
-                              funcoes[i].funcao.numeroFunctionD, funcoes[i].funcao.FunctionE, funcoes[i].funcao.Identifier, funcoes[i].funcao.numeroIf, funcoes[i].funcao.Literal, funcoes[i].funcao.Label,
-                              funcoes[i].funcao.Logical, funcoes[i].funcao.Member, funcoes[i].funcao.NewExpression, funcoes[i].funcao.Object, funcoes[i].funcao.Property,
-                              funcoes[i].funcao.Return, funcoes[i].funcao.Sequence, funcoes[i].funcao.Switch, funcoes[i].funcao.numeroSwitchCase, funcoes[i].funcao.This,
-                              funcoes[i].funcao.Throw, funcoes[i].funcao.Try, funcoes[i].funcao.Unary, funcoes[i].funcao.Update, funcoes[i].funcao.numeroVariaveis,
-                              funcoes[i].funcao.numeroVariaveisD, funcoes[i].funcao.numeroWhile, funcoes[i].funcao.With
-                            ]);
-
-        numeroVariaveisFuncoes = numeroVariaveisFuncoes + funcoes[i].funcao.numeroVariaveis;
-    }
-
-    var tableC = tableN.table(rowsFuncoes, 100);
-    infosFuncoes = "INFORMATION ABOUT EACH FUNCTION\n" + tableC + "\n---------------------------------------------------------------------\n";
-
-     var tableE = tableN.table(rowsNosEsprimas);
-    infosNosEsprima = "INFORMATION ABOUT EACH FUNCTION AND ESPRIMA NODE\n" + tableE;
-
-     var fileName = getFile(file.toString(), "\\", file.toString().match(/\\/gi).length);
-
-    var filePath = file.replace(dirOriginal, "");
-    filePath = ".\\results" + filePath.replace(fileName,"");
-
-    var numeroPastas = filePath.match(/\\/gi).length;
-        
-    for(var i = 1; i <= numeroPastas; i++) {
-        var pasta = getPath(filePath, "\\", i);
-
-        if(i > 1) {
-            if(getFile(pasta, "\\", pasta.match(/\\/gi).length) == nomeBiblioteca) {
-                nomeBiblioteca = nomeBiblioteca;
-            }
-
-            else
-                nomeBiblioteca = "";
-        }        
-
-        if (!fs.existsSync(pasta)){
-            fs.mkdirSync(pasta);
-         }
-    }
-
-    fs.writeFile(filePath + getFile(file.toString(), "\\", file.toString().match(/\\/gi).length).replace(".js", "") + ".txt", infosPrograma + infosFuncoes + infosNosEsprima, function(err) {
-        if(err) {
-            return console.log(err);
-        }
-    });
 }
 
 function getFile(s, c, n) {
@@ -967,11 +710,13 @@ function getFile(s, c, n) {
         var infosEsprima = "";
 
         for(var i = 0; i < funcoes.length; i++) {
-
             if(funcoes[i].funcao.funcaoPai === 1 && funcoes[i].funcao.funcaoFilho === -1)
             {
-                for(var j = 0; j < 39; j++)
-                    checarFilhos(funcoes,i,j);
+                checarFilhos(funcoes,i);
+
+                for(var j = 0; j < 39; j++) {
+                    contaFilhosInternos(funcoes[i].funcao, funcoes, j);
+                }
             }                     
 
             var volume = (funcoes[i].funcao.operandosTotal + funcoes[i].funcao.operadoresTotal ) * Math.log2(funcoes[i].funcao.operadores.length + funcoes[i].funcao.operandos.length);
@@ -980,7 +725,8 @@ function getFile(s, c, n) {
             
             infosFuncoes = infosFuncoes + file.toString().replace(caminhoComum, "") + ";" + nomeBiblioteca + ";" + funcoes[i].funcao.nome + ";loc;" + funcoes[i].funcao.numeroLinhas + "\n" +
                                           file.toString().replace(caminhoComum, "") + ";" + nomeBiblioteca + ";" + funcoes[i].funcao.nome + ";var;" + funcoes[i].funcao.numeroVariaveisD + "\n" +
-                                          file.toString().replace(caminhoComum, "") + ";" + nomeBiblioteca + ";" + funcoes[i].funcao.nome + ";func;" + funcoes[i].funcao.numeroChamadas + "\n" +
+                                          file.toString().replace(caminhoComum, "") + ";" + nomeBiblioteca + ";" + funcoes[i].funcao.nome + ";func;" + funcoes[i].funcao.numeroChamadas + "\n" +                                          
+                                          file.toString().replace(caminhoComum, "") + ";" + nomeBiblioteca + ";" + funcoes[i].funcao.nome + ";dfunc;" + funcoes[i].funcao.funcoesFilhas.length + "\n" +
                                           file.toString().replace(caminhoComum, "") + ";" + nomeBiblioteca + ";" + funcoes[i].funcao.nome + ";cc;" + complexidadeCiclomatica + "\n" +
                                           file.toString().replace(caminhoComum, "") + ";" + nomeBiblioteca + ";" + funcoes[i].funcao.nome + ";halstead;" + volume + "\n" +
                                           file.toString().replace(caminhoComum, "") + ";" + nomeBiblioteca + ";" + funcoes[i].funcao.nome + ";mi;" + maintainability + "\n";
@@ -1028,4 +774,16 @@ function getFile(s, c, n) {
 
         infosBibliotecas = infosBibliotecas + infosPrograma + infosFuncoes + infosEsprima;
         escreveArquivo();
+}
+
+function contaFilhosInternos(funcaoPai, funcoes, escolha) {
+    for(var i = 0; i < funcaoPai.funcoesFilhas.length; i++) {
+        if(funcoes[funcaoPai.funcoesFilhas[i]].funcao.funcoesFilhas.length > 0){
+            refatoraDados(funcaoPai, funcoes[funcaoPai.funcoesFilhas[i]].funcao, escolha);
+            contaFilhosInternos(funcoes[funcaoPai.funcoesFilhas[i]].funcao, funcoes, escolha);
+        }
+
+        else
+            refatoraDados(funcaoPai, funcoes[funcaoPai.funcoesFilhas[i]].funcao, escolha);
+    }
 }

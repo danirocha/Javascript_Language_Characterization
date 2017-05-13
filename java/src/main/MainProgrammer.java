@@ -548,10 +548,10 @@ public class MainProgrammer {
 	
 	public static void main(String[] args) throws IOException {
 		
-		List<Biblioteca> bibliotecas = new BibliotecaDAO().pegaBibliotecas();
+		//List<Biblioteca> bibliotecas = new BibliotecaDAO().pegaBibliotecas();
 				
-		BufferedWriter bw = createBat();
-		BufferedWriter bwLog = createLog();
+		//BufferedWriter bw = createBat();
+		//BufferedWriter bwLog = createLog();
 	
 		//readDirectory(DIRETORIO, bw, bwLog, bibliotecas);
 		
@@ -562,10 +562,30 @@ public class MainProgrammer {
 //		CSVCreator creator = new CSVCreator();
 //		creator.createFile(DIRETORIO, bibliotecas, bibliotecasRejeitar);
 		
-		searchDirectory(bibliotecas, bwLog, bw);
+		//searchDirectory(bibliotecas, bwLog, bw);
 		
-		bw.close();
-		bwLog.close();
+		//bw.close();
+		//bwLog.close();
+		
+		//System.out.println("Deletando!");
+		//DeleteFiles deleter = new DeleteFiles();
+		//deleter.deleteFiles();
+		
+		//System.out.println("Gerando CSV por Biblioteca!");
+		//GeradorCSVBiblioteca gerador1 = new GeradorCSVBiblioteca();
+		//gerador1.geraCSV();
+			
+		System.out.println("Gerando CSV por Arquivo!");
+		GeradorCSVArquivo gerador2 = new GeradorCSVArquivo();
+		gerador2.geraCSV();
+		
+		//System.out.println("Gerando CSV por Funcao!");
+		//GeradorCSVFuncao gerador3 = new GeradorCSVFuncao();
+		//gerador3.geraCSV();
+		
+		//System.out.println("Gerando CSV por Funcao e No do Esprima!");
+		//GeradorCSVFuncaoEsprima gerador4 = new GeradorCSVFuncaoEsprima();
+		//gerador4.geraCSV();
 		
 		System.out.println("Fim!");
 	}
