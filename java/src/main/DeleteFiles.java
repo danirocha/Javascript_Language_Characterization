@@ -8,8 +8,8 @@ import java.io.IOException;
 public class DeleteFiles {
 
 	public void deleteFiles() throws IOException {
-		String caminho = "C:\\Users\\marcio.barros\\Desktop\\dist\\results";
-		//String caminho = "C:\\Users\\luisb\\Desktop\\dist\\result";
+		//String caminho = "C:\\Users\\marcio.barros\\Desktop\\dist\\results";
+		String caminho = "C:\\Users\\luisb\\Desktop\\novosTestes\\results";
 		
 		BufferedWriter bw = createTXT();
 		
@@ -19,7 +19,7 @@ public class DeleteFiles {
 	}
 	
 	private static BufferedWriter createTXT() throws IOException {
-		String caminhoArquivoExportacao = "C:\\Users\\marcio.barros\\Desktop\\dist\\arquivos deletados.txt";
+		String caminhoArquivoExportacao = "C:\\Users\\luisb\\Desktop\\novosTestes\\arquivos deletados.txt";
 		BufferedWriter bw = new BufferedWriter(new FileWriter(caminhoArquivoExportacao));
 		return bw;
 	}

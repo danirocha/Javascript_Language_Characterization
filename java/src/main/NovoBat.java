@@ -8,11 +8,7 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class MainProgrammer {
-	
-	private static final String DIRETORIO = "C:\\Users\\luisb\\Desktop\\novosTestes\\results\\832";
-	
-	private static int nBibliotecas = 0;
+public class NovoBat {
 	
 	private static String[] bibliotecasRejeitar = {"stream-combiner2",
 			"nodegit-promise",
@@ -545,171 +541,16 @@ public class MainProgrammer {
 			"es-7z",
 			"irrelonopenzwave",
 		};
-	
-	public static void main(String[] args) throws Exception {
-		
-		List<Biblioteca> bibliotecas = new BibliotecaDAO().pegaBibliotecas();
-			
-		//BufferedWriter bw = createBat();
-//		BufferedWriter bw2 = createBat2();
-		//BufferedWriter bwLog = createLog();
-	
-		//readDirectory(DIRETORIO, bw, bibliotecas);
-		
-		//bw.write("echo Analyzes done!");
-		//bw.close();
-		//bwLog.close();
-		
-		//CSVCreator creator = new CSVCreator();
-		//creator.createFile(DIRETORIO, bibliotecas, bibliotecasRejeitar);
-		
-//		searchDirectory(bibliotecas, bw2);
-		
-		//System.out.println("Deletando!");
-		//DeleteFiles deleter = new DeleteFiles();
-		//deleter.deleteFiles();
-		
-		//System.out.println("Gerando CSV por Biblioteca!");
-		//GeradorCSVBiblioteca gerador1 = new GeradorCSVBiblioteca();
-		//gerador1.geraCSV();
-		
-		//System.out.println("Gerando CSV por Arquivo!");
-		//GeradorCSVArquivo gerador2 = new GeradorCSVArquivo();
-		//gerador2.geraCSV();
-		
-		System.out.println("Gerando CSV por Funcao!");
-		GeradorCSVFuncao gerador3 = new GeradorCSVFuncao();
-		gerador3.geraCSV();
-		
-		//GeradorCSVFuncaoEsprima gerador4 = new GeradorCSVFuncaoEsprima();
-		//System.out.println("Gerando CSV por Funcao e No do Esprima!");
-		//gerador4.geraCSV();
-		
-		//NewBat novoBat = new NewBat();
-		//novoBat.geraBat(bibliotecas);
-		
-		//NovoBat bat = new NovoBat();
-		//bat.geraBat(bibliotecas);
-		
-//		System.out.println(nBibliotecas);
-		
-		//numberOfPackages(DIRETORIO);
-		
-		//System.out.println(nBibliotecas);
-		System.out.println("Fim!");
-	}
-	
-	private static void searchDirectory(List<Biblioteca> bibliotecas, BufferedWriter bw) throws IOException {
-		int numeroBibliotecas = 0;
-		
-		for(Biblioteca biblioteca : bibliotecas) {
-			
-			boolean achou = false;
-			
-			for(int indiceRejeitada = 0; indiceRejeitada < bibliotecasRejeitar.length; indiceRejeitada++) {
-				if(bibliotecasRejeitar[indiceRejeitada].compareTo(biblioteca.getNome()) == 0) {
-					achou = true; break;
-				}
-			}
-			
-			if(achou)
-				continue;
-			
-			int numeroPasta = biblioteca.getId() % 1000;
-			
-			String pasta = biblioteca.getGithub().substring(biblioteca.getGithub().lastIndexOf("/") + 1);
-			
-			if(pasta.compareTo("") == 0)
-			{
-				pasta = biblioteca.getGithub().substring(0, biblioteca.getGithub().lastIndexOf("/"));
-				pasta = pasta.substring(pasta.lastIndexOf("/") + 1);
-			}
-			
-			String caminho = "C:\\Users\\luisb\\Desktop\\MAQUINAREMOTA\\dist\\dist\\" + numeroPasta + "\\" + pasta;
-			File file = new File(caminho);
-			
-			if(file.exists())
-				if(file.isDirectory())
-				{
-					bw.write("node analyzer.js " + caminho + " " + biblioteca.getId() + " " + biblioteca.getNome() + "\n");
-					numeroBibliotecas++;
-				}			
-		}
-		
-		System.out.println(numeroBibliotecas);
-	}
 
-	private static BufferedWriter createBat() throws IOException {
-		String caminhoArquivoExportacao = "C:\\Users\\luisb\\Documents\\MEGA\\FACULDADE\\TCC\\Javascript_Language_Characterization\\analyzer.bat";
-		BufferedWriter bw = new BufferedWriter(new FileWriter(caminhoArquivoExportacao));
-		return bw;
-	}
-	
-	private static BufferedWriter createBat2() throws IOException {
-		String caminhoArquivoExportacao = "C:\\Users\\luisb\\Documents\\MEGA\\FACULDADE\\TCC\\Javascript_Language_Characterization\\analyzer2.bat";
-		BufferedWriter bw = new BufferedWriter(new FileWriter(caminhoArquivoExportacao));
-		return bw;
-	}
-	
-	private static BufferedWriter createLog() throws IOException {
-		String caminhoArquivoExportacao = "C:\\Users\\luisb\\Documents\\MEGA\\FACULDADE\\TCC\\Javascript_Language_Characterization\\log.txt";
-		BufferedWriter bw = new BufferedWriter(new FileWriter(caminhoArquivoExportacao));
-		return bw;
-	}
-	
-	private static void readDirectory(String diretorio, BufferedWriter bw, List<Biblioteca> bibliotecas) throws IOException {
+	public void geraBat(List<Biblioteca> bibliotecas) throws Exception {
+		BufferedWriter bw = criaBat();
 		
-		File diretorioLido = new File(diretorio);
+		procuraDiretorios("C:\\Users\\luisb\\Desktop\\MAQUINAREMOTA\\dist\\dist", bw, bibliotecas);
 		
-		File arquivos[] = diretorioLido.listFiles();
-				
-		for(int i = 0; i < arquivos.length; i++) {
-			File arquivo = arquivos[i];
-			
-			Pattern pattern = Pattern.compile("C:\\\\Users\\\\luisb\\\\Desktop\\\\MAQUINAREMOTA\\\\dist\\\\dist\\\\(\\d+)$");
-			Matcher match = pattern.matcher(arquivo.getAbsolutePath());
-			
-			if(match.find()) {
-				File libs[] = arquivo.listFiles();
-				
-				for(Biblioteca biblioteca : bibliotecas) {
-					
-					if(biblioteca.getId() % 1000 != Integer.parseInt(match.group(1)))
-						continue;
-					
-					for(int b = 0; b < libs.length; b++) {
-						
-						boolean achou = false;
-						
-						for(int indiceRejeitada = 0; indiceRejeitada < bibliotecasRejeitar.length; indiceRejeitada++) {
-							if(bibliotecasRejeitar[indiceRejeitada].compareTo(biblioteca.getNome()) == 0) {
-								achou = true; break;
-							}
-						}
-						
-						if(achou)
-							break;
-													
-						String lib = libs[b].getAbsolutePath().substring(libs[b].getAbsolutePath().lastIndexOf("\\") + 1);
-						Pattern pattern2 = Pattern.compile("/" + lib + "[.]*$");
-						Matcher matcher = pattern2.matcher(biblioteca.getGithub());
-											
-						if(matcher.find()) {
-							bw.write("node analyzer.js " + libs[b].getAbsolutePath() + " " + biblioteca.getId() + " " + biblioteca.getNome() + "\n");
-							nBibliotecas++;
-							break;
-						}
-					}
-				}
-			}
-			
-			else
-				if(arquivo.isDirectory())
-					readDirectory(arquivo.getAbsolutePath(), bw, bibliotecas);
-		}
+		bw.close();
 	}
 	
-	public static void numberOfPackages(String diretorio) {
+	private void procuraDiretorios(String diretorio, BufferedWriter bw, List<Biblioteca> bibliotecas) throws Exception {
 		File diretorioLido = new File(diretorio);
 		
 		File arquivos[] = diretorioLido.listFiles();
@@ -718,13 +559,58 @@ public class MainProgrammer {
 			File arquivo = arquivos[i];
 			
 			if(arquivo.isDirectory()) {
-				File[] bibliotecas = arquivo.listFiles();
+				Pattern pattern = Pattern.compile("C:\\\\Users\\\\luisb\\\\Desktop\\\\MAQUINAREMOTA\\\\dist\\\\dist\\\\(\\d+)$");
+				Matcher match = pattern.matcher(arquivo.getAbsolutePath());
 				
-				nBibliotecas += bibliotecas.length;
+				if(match.find()) {
+					System.out.println(match.group(1));
+					File libs[] = arquivo.listFiles();
+					
+					for(int j = 0; j < libs.length; j++) {
+						
+						if(libs[j].isDirectory()) {
+							for(Biblioteca biblioteca : bibliotecas) {
+								
+								boolean achou = false;
+								
+								for(int indiceRejeitada = 0; indiceRejeitada < bibliotecasRejeitar.length; indiceRejeitada++) {
+									if(bibliotecasRejeitar[indiceRejeitada].compareTo(biblioteca.getNome()) == 0) {
+										achou = true; break;
+									}
+								}
+								
+								if(achou)
+									continue;
+								
+								if(biblioteca.getId() % 1000 != Integer.parseInt(match.group(1)))
+									continue;
+															
+								String lib = libs[j].getAbsolutePath().substring(libs[j].getAbsolutePath().lastIndexOf("\\") + 1);
+								Pattern pattern2 = Pattern.compile("/" + lib + "[.]*$");
+								Matcher matcher = pattern2.matcher(biblioteca.getGithub());
+								
+								if(matcher.find()) {
+									File arquivoR = new File("C:\\Users\\luisb\\Desktop\\novosTestes\\results\\" + match.group(1) + "\\" + biblioteca.getNome().replace("/", "") + " R.txt");
+									
+									if(!arquivoR.exists()) {
+										bw.write("node analyzer.js " + libs[j].getAbsolutePath() + " " + biblioteca.getId() + " " + biblioteca.getNome() + "\n");
+										break;
+									}
+								}
+							}
+						}
+					}
+				}
+				
+				else
+					procuraDiretorios(arquivo.getAbsolutePath(), bw, bibliotecas);
 			}
 		}
-		
-		System.out.println(nBibliotecas);
 	}
 
+	private static BufferedWriter criaBat() throws IOException {
+		String caminhoArquivoExportacao = "C:\\Users\\luisb\\Desktop\\newTest\\novoBat.bat";
+		BufferedWriter bw = new BufferedWriter(new FileWriter(caminhoArquivoExportacao));
+		return bw;
+	}
 }
