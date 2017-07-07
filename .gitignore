@@ -2,3 +2,8 @@ node_modules/
 .vscode/launch.json
 src/*.js
 results/
+analyzer.bat
+*.png
+*.jar
+*.xml
+references.bib
